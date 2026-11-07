@@ -15,6 +15,10 @@ offline mode and "Add to Home Screen".
 - **Touch controls**: tap = click, one-finger drag = scroll the map (or drag-build with a tool),
   two-finger drag = scroll even while a tool is selected, pinch = zoom,
   long-press = right-click (tooltips stay up while you hold).
+- **Aim mode** (crosshair button): one finger moves the cursor like a trackpad and never clicks;
+  a round CLICK button for the other thumb clicks (tap) or holds the button down (hold, for
+  drag-building). Slide off the button before releasing to cancel. Options in the menu: tap on the
+  map jumps the cursor there; CLICK button in the bottom-left or bottom-right corner.
 - **Side button bar** in the notch area: zoom in/out, "next tap is a right-click",
   Esc (cancel tool; double-tap = close top window), on-screen keyboard, menu.
 - **Works with rotation lock on**: when the phone reports portrait, the app turns itself 90° so you can

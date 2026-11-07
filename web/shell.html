@@ -91,6 +91,30 @@
                    --gutter: max(46px, env(safe-area-inset-top)); }
     #app.rot #sheet, #app.rot #toast { position: absolute; }
 
+    /* Aim mode: trackpad cursor + click button */
+    #aimring {
+      position: absolute; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+      border: 2px solid rgba(255, 220, 120, .9); border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 1px rgba(0,0,0,.6);
+      pointer-events: none; display: none; z-index: 3;
+    }
+    #clickbtn {
+      position: absolute; bottom: 10px; left: 10px; z-index: 4;
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(200, 160, 64, .55); border: 2px solid rgba(255, 230, 160, .8);
+      color: #111; font: 600 12px/1 -apple-system, sans-serif;
+      display: none; align-items: center; justify-content: center;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+    }
+    #clickbtn.right-side { left: auto; right: 10px; }
+    #clickbtn.down { background: rgba(240, 200, 90, .9); transform: scale(.94); }
+    #clickbtn.rmb { background: rgba(120, 170, 230, .7); border-color: rgba(200, 225, 255, .9); }
+    #clickbtn.cancel { background: rgba(200, 50, 40, .85); border-color: #fcc; color: #fff; }
+    .aim #aimring, .aim #clickbtn { display: flex; }
+    .aim #aimring { display: block; }
+    #panel .toggle { min-width: 52px; }
+    #panel .toggle.on { background: var(--accent); color: #111; border-color: #f0d080; }
+
     /* Menu sheet */
     #sheet {
       display: none; position: fixed; inset: 0; z-index: 30;
@@ -128,6 +152,8 @@
   <div id="app">
     <div id="stage">
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+      <div id="aimring"></div>
+      <div id="clickbtn">CLICK</div>
       <input id="kbd" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
       <div id="loader">
         <div id="box">
@@ -139,6 +165,7 @@
     <div id="controls">
       <button id="b-zin" aria-label="Zoom in"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M10 7v6M7 10h6M15 15l5 5"/></svg></button>
       <button id="b-zout" aria-label="Zoom out"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M7 10h6M15 15l5 5"/></svg></button>
+      <button id="b-aim" aria-label="Aim mode (trackpad cursor + click button)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
       <button id="b-rmb" aria-label="Next tap is a right-click"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v7"/><path d="M12 3a6 6 0 0 1 6 6v1h-6z" fill="currentColor"/></svg></button>
       <button id="b-esc" aria-label="Close windows / cancel tool"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       <button id="b-kbd" aria-label="Keyboard"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
@@ -154,7 +181,16 @@
           <button id="m-flip">Flip upside down</button>
         </div>
 
-        <h3>Touch controls</h3>
+        <h3>Aim mode</h3>
+      <p>Turn on with the <b>crosshair</b> button. One finger slides the cursor like a laptop trackpad (it never clicks by itself); the round <b>CLICK</b> button does the clicking: tap = click, hold = mouse button held down (slide your other finger to drag-build, release to finish). To cancel a hold, slide your thumb off the button before letting go (this also drops the selected build tool). For a right-click, press the right-click side button first. Two fingers still scroll and zoom.</p>
+      <div class="row">
+        <button id="m-tapjump" class="toggle">Off</button><span style="align-self:center;color:#ccc">Tap on the map moves the cursor there</span>
+      </div>
+      <div class="row">
+        <button id="m-btnside" class="toggle">Left</button><span style="align-self:center;color:#ccc">CLICK button corner</span>
+      </div>
+
+      <h3>Touch controls</h3>
         <ul>
           <li><b>Tap</b> = click. <b>Drag</b> = scroll the map, or drag-build when a tool is selected.</li>
           <li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li>
@@ -399,9 +435,13 @@
     }
 
     function onStart(e) {
+      if (e.target === cbtn) return;
       e.preventDefault(); e.stopPropagation();
-      var ts = touchesArr(e.touches);
-      if (ts.length === 1 && !g) {
+      var ts = touchesArr(e.targetTouches);
+      if (ts.length === 1 && !g && aim) {
+        var q = pt(ts[0]);
+        g = { mode: 'aim', id: ts[0].identifier, start: q, last: q, t0: Date.now(), moved: false };
+      } else if (ts.length === 1 && !g) {
         var p = pt(ts[0]);
         mouse('mousemove', p.x, p.y, 0, 0);
         g = { mode: 'pending', id: ts[0].identifier, start: p, last: p };
@@ -423,10 +463,22 @@
       }
     }
     function onMove(e) {
+      if (e.target === cbtn) return;
       e.preventDefault(); e.stopPropagation();
       if (!g) return;
-      var ts = touchesArr(e.touches);
-      if (g.mode === 'pending' || g.mode === 'drag') {
+      var ts = touchesArr(e.targetTouches);
+      if (g.mode === 'aim') {
+        var ta = ts.filter(function (x) { return x.identifier === g.id; })[0];
+        if (!ta) return;
+        var a = pt(ta);
+        if (!g.moved && Math.hypot(a.x - g.start.x, a.y - g.start.y) < 4) return;
+        g.moved = true;
+        var dx = a.x - g.last.x, dy = a.y - g.last.y, sp = Math.hypot(dx, dy);
+        /* gentle acceleration: slow moves are 1:1 for precision, fast flicks travel further */
+        var gain = 1 + Math.min(1.5, Math.max(0, (sp - 6) / 10));
+        moveCursor(cur.x + dx * gain, cur.y + dy * gain);
+        g.last = a;
+      } else if (g.mode === 'pending' || g.mode === 'drag') {
         var t = ts.filter(function (x) { return x.identifier === g.id; })[0];
         if (!t) return;
         var p = pt(t);
@@ -456,19 +508,105 @@
       }
     }
     function onEnd(e) {
+      if (e.target === cbtn) return;
       e.preventDefault(); e.stopPropagation();
       if (!g) return;
-      var ts = touchesArr(e.touches);
+      var ts = touchesArr(e.targetTouches);
       if (g.mode === 'two') {
-        if (ts.length < 2) { endTwo(); g = ts.length ? { mode: 'done' } : null; }
+        if (ts.length < 2) {
+          endTwo(); g = ts.length ? { mode: 'done' } : null;
+          if (aim) setTimeout(function () { moveCursor(cur.x, cur.y); }, 30);
+        }
         return;
       }
+      if (g.mode === 'aim') {
+        if (ts.length === 0) {
+          var tj = touchesArr(e.changedTouches).filter(function (x) { return x.identifier === g.id; })[0];
+          if (tapJump && !g.moved && Date.now() - g.t0 < 400 && tj && e.type !== 'touchcancel') {
+            var j = pt(tj); moveCursor(j.x, j.y);
+          }
+          g = null;
+        }
+        return;
+      }
+      if (g.mode === 'done') { if (ts.length === 0) g = null; return; }
       if (ts.length === 0) {
         var t = touchesArr(e.changedTouches).filter(function (x) { return x.identifier === g.id; })[0];
         endOne(t ? pt(t) : g.last, e.type === 'touchcancel');
         g = null;
       }
     }
+    /* ---------------------------------------------------------------
+     * Aim mode: trackpad-style cursor + a CLICK button for the other thumb.
+     * ------------------------------------------------------------- */
+    function pref(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v === '1'; } catch (e) { return d; } }
+    function setPref(k, v) { try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {} }
+    var aim = pref('ttd-aim', false), tapJump = pref('ttd-tapjump', true), btnRight = pref('ttd-btnright', false);
+    var cur = null, held = 0; // held: 0 none, 1 left, 2 right
+    var ring = document.getElementById('aimring'), cbtn = document.getElementById('clickbtn');
+    function canvasBox() { return canvas.getBoundingClientRect(); }
+    function moveCursor(x, y) {
+      var r = canvasBox();
+      cur = { x: Math.max(r.left, Math.min(r.left + r.width - 1, x)), y: Math.max(r.top, Math.min(r.top + r.height - 1, y)) };
+      mouse('mousemove', cur.x, cur.y, 0, held === 2 ? 2 : held === 1 ? 1 : 0);
+      ring.style.transform = 'translate(' + (cur.x - stage.offsetLeft) + 'px,' + (cur.y - stage.offsetTop) + 'px)';
+    }
+    function setAim(on) {
+      aim = on; setPref('ttd-aim', on);
+      document.getElementById('app').classList.toggle('aim', on);
+      $('b-aim').classList.toggle('on', on);
+      if (on) {
+        if (!cur) { var r = canvasBox(); cur = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+        moveCursor(cur.x, cur.y);
+      }
+    }
+    function inside(el, x, y) { var r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+    var pressId = null, pressOut = false;
+    cbtn.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+    cbtn.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      if (pressId !== null || !cur) return;
+      pressId = e.pointerId; pressOut = false;
+      try { cbtn.setPointerCapture(e.pointerId); } catch (x) {}
+      held = rightNext ? 2 : 1;
+      if (rightNext) setRightNext(false);
+      cbtn.classList.add('down');
+      mouse('mousemove', cur.x, cur.y, 0, 0);
+      mouse('mousedown', cur.x, cur.y, held === 2 ? 2 : 0, held === 2 ? 2 : 1);
+    });
+    cbtn.addEventListener('pointermove', function (e) {
+      if (e.pointerId !== pressId) return;
+      pressOut = !inside(cbtn, e.clientX, e.clientY);
+      cbtn.classList.toggle('cancel', pressOut);
+      cbtn.textContent = pressOut ? 'CANCEL' : (held === 2 ? 'RIGHT' : 'CLICK');
+    });
+    function release(e) {
+      if (e.pointerId !== pressId) return;
+      var b = held, cancel = pressOut || e.type === 'pointercancel';
+      pressId = null; held = 0;
+      cbtn.classList.remove('down', 'cancel');
+      updateBtnLabel();
+      var up = function () { mouse('mouseup', cur.x, cur.y, b === 2 ? 2 : 0, 0); };
+      if (cancel && b === 1) { key('Escape', 'Escape', 27); setTimeout(up, 60); }
+      else up();
+    }
+    cbtn.addEventListener('pointerup', release);
+    cbtn.addEventListener('pointercancel', release);
+    function updateBtnLabel() {
+      cbtn.textContent = rightNext ? 'RIGHT' : 'CLICK';
+      cbtn.classList.toggle('rmb', rightNext);
+    }
+    function setBtnSide(right) {
+      btnRight = right; setPref('ttd-btnright', right);
+      cbtn.classList.toggle('right-side', right);
+      $('m-btnside').textContent = right ? 'Right' : 'Left';
+    }
+    function setTapJump(on) {
+      tapJump = on; setPref('ttd-tapjump', on);
+      $('m-tapjump').textContent = on ? 'On' : 'Off';
+      $('m-tapjump').classList.toggle('on', on);
+    }
+
     ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (type, i) {
       stage.addEventListener(type, [onStart, onMove, onEnd, onEnd][i], { capture: true, passive: false });
     });
@@ -485,6 +623,7 @@
     }
     function setRightNext(on) {
       rightNext = on; $('b-rmb').classList.toggle('on', on);
+      if (typeof updateBtnLabel === 'function') updateBtnLabel();
     }
     function bind(id, fn) {
       var el = $(id);
@@ -492,7 +631,15 @@
     }
     bind('b-zin', function () { var c = center(); wheel(c.x, c.y, -100); });
     bind('b-zout', function () { var c = center(); wheel(c.x, c.y, 100); });
-    bind('b-rmb', function () { setRightNext(!rightNext); if (rightNext) toast('Next tap is a right-click'); });
+    bind('b-rmb', function () { setRightNext(!rightNext); if (rightNext) toast(aim ? 'Next CLICK press is a right-click' : 'Next tap is a right-click'); });
+    bind('b-aim', function () { setAim(!aim); toast(aim ? 'Aim mode on: slide to move the cursor, press CLICK to click' : 'Aim mode off'); });
+    bind('m-tapjump', function () { setTapJump(!tapJump); });
+    bind('m-btnside', function () { setBtnSide(!btnRight); });
+    setTapJump(tapJump); setBtnSide(btnRight);
+    /* restore aim mode once the game is running */
+    var aimWait = setInterval(function () {
+      if (typeof FS !== 'undefined' && $('loader').style.display === 'none') { clearInterval(aimWait); setAim(aim); }
+    }, 500);
     var lastEsc = 0;
     bind('b-esc', function () {
       /* Esc cancels the current build tool; a quick second tap also closes the
