@@ -1,5 +1,8 @@
 # OpenTTD for phone browsers
 
+> **Disclaimer:** this project is intended for people who own a copy of
+> Transport Tycoon Deluxe. If you don’t own the original game, please buy it before using this app.
+
 [OpenTTD](https://www.openttd.org) (the free, open-source remake of Transport Tycoon Deluxe)
 compiled to WebAssembly, with a page made for playing on a phone in landscape.
 
