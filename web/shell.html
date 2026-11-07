@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OpenTTD">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-192.png">
+  <title>OpenTTD</title>
+  <style>
+    :root {
+      --gutter: max(46px, env(safe-area-inset-right));
+      --pad-left: env(safe-area-inset-left);
+      --btn-bg: #3b3b3b;
+      --btn-border: #6c6c6c;
+      --btn-fg: #f0f0f0;
+      --accent: #c8a040;
+    }
+    html, body {
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      background: #000; color: #eee; overflow: hidden;
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+    #app {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: row;
+      padding-left: var(--pad-left);
+    }
+    #stage { position: relative; flex: 1; min-width: 0; height: 100%; }
+    canvas.emscripten {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      border: 0; display: block; outline: none;
+      image-rendering: pixelated; image-rendering: crisp-edges;
+      cursor: none;
+      touch-action: none;
+    }
+    #controls {
+      width: var(--gutter); flex: none; height: 100%;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      gap: 8px; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;
+      background: #111;
+    }
+    #controls button {
+      width: 38px; height: 38px; border-radius: 8px;
+      background: var(--btn-bg); color: var(--btn-fg);
+      border: 1px solid var(--btn-border);
+      font-size: 18px; line-height: 1; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+    }
+    #controls button.on { background: var(--accent); color: #111; border-color: #f0d080; }
+    #controls button:active { filter: brightness(1.3); }
+    #controls svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    #kbd {
+      position: absolute; left: 0; top: 0; width: 1px; height: 1px;
+      opacity: 0; border: 0; padding: 0; font-size: 16px; /* 16px stops iOS from zooming */
+    }
+
+    /* Loading / message box */
+    #loader {
+      position: absolute; inset: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      background: #1c2a14 radial-gradient(circle at 50% 40%, #3b5226 0%, #1c2a14 70%);
+    }
+    #box { min-width: 260px; max-width: 80%; border: 1px solid #a8a8a8; outline: 1px solid #626262; }
+    #title { background: #838383; color: #fff; padding: 2px 8px; text-shadow: 1px 1px #101010; }
+    #message { background: #c0c0c0; color: #101010; padding: 8px; min-height: 20px; }
+    #box.error #title, #box.error #message { background: #b00000; color: #fcf880; }
+    #bar { height: 6px; background: #555; margin-top: 8px; }
+    #bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+    /* Rotate hint */
+    #rotate {
+      display: none; position: fixed; inset: 0; z-index: 20;
+      background: #000; color: #eee; text-align: center;
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px; padding: 24px;
+    }
+    #rotate svg { width: 72px; height: 72px; stroke: #eee; fill: none; stroke-width: 1.5; }
+    @media (orientation: portrait) and (max-width: 700px) {
+      #rotate { display: flex; }
+    }
+
+    /* Menu sheet */
+    #sheet {
+      display: none; position: fixed; inset: 0; z-index: 30;
+      background: rgba(0,0,0,.6);
+      align-items: center; justify-content: center;
+    }
+    #sheet.open { display: flex; }
+    #panel {
+      background: #2b2b2b; border: 1px solid #6c6c6c; border-radius: 10px;
+      width: min(560px, 90vw); max-height: 86vh; overflow-y: auto;
+      padding: 14px 16px; box-sizing: border-box; touch-action: pan-y;
+      -webkit-user-select: text; user-select: text;
+    }
+    #panel h2 { margin: 0 0 8px; font-size: 17px; color: var(--accent); }
+    #panel h3 { margin: 14px 0 4px; font-size: 14px; }
+    #panel p, #panel li { color: #ccc; font-size: 13px; margin: 4px 0; }
+    #panel ul { padding-left: 18px; margin: 4px 0; }
+    #panel .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    #panel button {
+      background: var(--btn-bg); color: var(--btn-fg); border: 1px solid var(--btn-border);
+      border-radius: 8px; padding: 8px 12px; font-size: 14px;
+    }
+    #panel button.primary { background: var(--accent); color: #111; border-color: #f0d080; }
+    #status { color: #9fd08f; font-size: 13px; min-height: 18px; }
+    #toast {
+      position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 40;
+      background: rgba(30,30,30,.92); border: 1px solid #6c6c6c; border-radius: 8px;
+      padding: 6px 12px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="stage">
+      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+      <input id="kbd" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+      <div id="loader">
+        <div id="box">
+          <div id="title">Loading …</div>
+          <div id="message">Preparing game …<div id="bar"><div></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="controls">
+      <button id="b-zin" aria-label="Zoom in"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M10 7v6M7 10h6M15 15l5 5"/></svg></button>
+      <button id="b-zout" aria-label="Zoom out"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M7 10h6M15 15l5 5"/></svg></button>
+      <button id="b-rmb" aria-label="Next tap is a right-click"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v7"/><path d="M12 3a6 6 0 0 1 6 6v1h-6z" fill="currentColor"/></svg></button>
+      <button id="b-esc" aria-label="Close windows / cancel tool"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button id="b-kbd" aria-label="Keyboard"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
+      <button id="b-menu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+
+  <div id="rotate">
+    <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M3 9a9 9 0 0 1 4-5M21 15a9 9 0 0 1-4 5"/></svg>
+    <div>Turn your phone sideways to play.</div>
+  </div>
+
+  <div id="sheet">
+    <div id="panel">
+      <h2>OpenTTD for phone</h2>
+      <div class="row">
+        <button id="m-close" class="primary">Back to game</button>
+        <button id="m-fs">Fullscreen</button>
+      </div>
+
+      <h3>Touch controls</h3>
+      <ul>
+        <li><b>Tap</b> = click. <b>Drag</b> = scroll the map, or drag-build when a tool is selected.</li>
+        <li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li>
+        <li><b>Long-press</b> = right-click (shows tooltips, closes dropdowns).</li>
+        <li>Side buttons: zoom in/out, “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li>
+        <li>If the interface is too small or big: OpenTTD menu → <i>Game Options → Graphics → Interface size</i>.</li>
+      </ul>
+
+      <h3>Saves</h3>
+      <p>Games are saved inside this browser on this device. Export them now and then as a backup.</p>
+      <div class="row">
+        <button id="m-export">Export saves</button>
+        <button id="m-import">Import files…</button>
+      </div>
+      <div id="status"></div>
+
+      <h3>Using your own original Transport Tycoon Deluxe graphics &amp; sounds</h3>
+      <p>This app ships with the free OpenGFX graphics and OpenSFX sounds. If you own TTD on a computer, you can use its original files instead:</p>
+      <ul>
+        <li>Find these files in your TTD install folder: <code>TRG1R.GRF, TRGCR.GRF, TRGHR.GRF, TRGIR.GRF, TRGTR.GRF</code> (Windows version) or <code>TRG1.GRF, TRGC.GRF, TRGH.GRF, TRGI.GRF, TRGT.GRF</code> (DOS version), plus <code>SAMPLE.CAT</code> for sounds.</li>
+        <li>Put them on your phone (e.g. iCloud Drive / Files), tap <b>Import files…</b> and select them all.</li>
+        <li>Reload, then in OpenTTD choose <i>Game Options → Graphics → Base graphics set → Original</i> (and the same for base sounds).</li>
+      </ul>
+      <p>Your original TTD <code>.SV1</code> save games can be imported the same way and loaded from <i>Load Game</i>.</p>
+
+      <h3>Install</h3>
+      <p>On iPhone: Safari → Share → <b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p>
+      <p style="color:#888">OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p>
+      <input type="file" id="m-file" multiple style="display:none">
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+  (function () {
+    'use strict';
+    var canvas = document.getElementById('canvas');
+    var stage = document.getElementById('stage');
+    var PERSONAL = '/home/web_user/.openttd';
+
+    function $(id) { return document.getElementById(id); }
+    function toast(text, ms) {
+      var t = $('toast'); t.textContent = text; t.classList.add('show');
+      clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, ms || 2500);
+    }
+    function setLoader(title, msg, isError) {
+      $('loader').style.display = 'flex';
+      $('title').textContent = title;
+      if (msg !== undefined) $('message').innerHTML = msg;
+      $('box').className = isError ? 'error' : '';
+    }
+
+    /* ---------------------------------------------------------------
+     * Emscripten Module
+     * ------------------------------------------------------------- */
+    var Module = window.Module = {
+      preRun: [], postRun: [], arguments: [],
+      totalDependencies: 0,
+      print: function (t) { console.log(t); },
+      printErr: function (t) { console.warn(t); },
+      canvas: canvas,
+      setStatus: function (text) {
+        var m = text && text.match(/\((\d+(?:\.\d+)?)\/(\d+)\)/);
+        var bar = document.querySelector('#bar > div');
+        if (m && bar) bar.style.width = Math.round(100 * m[1] / m[2]) + '%';
+        if (!text) $('loader').style.display = 'none';
+      },
+      monitorRunDependencies: function (left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        if (left === 0) {
+          $('loader').style.display = 'none';
+        }
+      },
+      /* Called (from our pre.js addition) once the saved files are loaded
+       * from IndexedDB, before the game starts. */
+      onFsReady: function () { writeDefaultConfig(); },
+      onBootstrap: function (cur, total) {
+        setLoader('Missing base graphics', 'Downloading base graphics … ' + cur + ' / ' + total + ' bytes');
+      },
+      onBootstrapFailed: function () {
+        setLoader('Missing base graphics', 'Could not download base graphics. Check your connection and reload.', true);
+      },
+      onBootstrapReload: function () { setLoader('Base graphics ready', 'Reloading …'); },
+      onExit: function () {
+        setLoader('Thanks for playing!', 'Tap to start again.');
+        $('loader').onclick = function () { location.reload(); };
+      },
+      onAbort: function () {
+        setLoader('Crash :(', 'The game crashed. Tap to reload — your saves are kept.', true);
+        $('loader').onclick = function () { location.reload(); };
+      },
+      onWarningFs: function () { /* we explain storage in the menu instead */ }
+    };
+    window.onerror = function () { Module.onAbort(); };
+
+    /* First run: phone-friendly defaults. Only written when no config exists,
+     * so anything changed in-game is kept. */
+    function writeDefaultConfig() {
+      try {
+        var cfg = PERSONAL + '/openttd.cfg';
+        try { FS.stat(cfg); return; } catch (e) { /* not there yet */ }
+        var shortSide = Math.min(window.innerWidth, window.innerHeight);
+        var scale = shortSide >= 700 ? 150 : 100;
+        FS.writeFile(cfg, [
+          '[misc]',
+          'gui_scale = ' + scale,
+          '',
+          '[gui]',
+          '; 3 = drag the map with one finger (left button)',
+          'scroll_mode = 3',
+          'autosave = monthly',
+          'show_finances = true',
+          'hover_delay_ms = 0',
+          '',
+          '[network]',
+          'participate_survey = no',
+          ''
+        ].join('\n'));
+      } catch (e) { console.warn('config', e); }
+    }
+
+    window.addEventListener('orientationchange', function () { setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 300); });
+
+    /* ---------------------------------------------------------------
+     * Touch → mouse translation.
+     * We catch touches in the capture phase on the stage so SDL never sees
+     * them, and feed SDL plain mouse events instead.
+     * ------------------------------------------------------------- */
+    var LONG_PRESS_MS = 450;
+    var MOVE_SLOP = 9;          // px before a touch becomes a drag
+    var PINCH_STEP = 1.22;      // finger-distance ratio per zoom step
+    var rightNext = false;
+
+    function mouse(type, x, y, button, buttons) {
+      var ev = new MouseEvent(type, {
+        bubbles: true, cancelable: true, view: window,
+        clientX: x, clientY: y, screenX: x, screenY: y,
+        button: button || 0, buttons: buttons || 0
+      });
+      canvas.dispatchEvent(ev);
+    }
+    function wheel(x, y, dy) {
+      canvas.dispatchEvent(new WheelEvent('wheel', {
+        bubbles: true, cancelable: true, view: window,
+        clientX: x, clientY: y, deltaY: dy, deltaMode: 0
+      }));
+    }
+    function key(code, keyName, keyCode) {
+      var init = { bubbles: true, cancelable: true, code: code, key: keyName, keyCode: keyCode, which: keyCode };
+      var down = new KeyboardEvent('keydown', init);
+      var up = new KeyboardEvent('keyup', init);
+      [down, up].forEach(function (e) {
+        try {
+          Object.defineProperty(e, 'keyCode', { get: function () { return keyCode; } });
+          Object.defineProperty(e, 'which', { get: function () { return keyCode; } });
+        } catch (x) {}
+      });
+      window.dispatchEvent(down);
+      setTimeout(function () { window.dispatchEvent(up); }, 30);
+    }
+    function rightClick(x, y) {
+      mouse('mousemove', x, y, 0, 0);
+      mouse('mousedown', x, y, 2, 2);
+      setTimeout(function () { mouse('mouseup', x, y, 2, 0); }, 40);
+    }
+    function leftClick(x, y) {
+      mouse('mousemove', x, y, 0, 0);
+      mouse('mousedown', x, y, 0, 1);
+      setTimeout(function () { mouse('mouseup', x, y, 0, 0); }, 40);
+    }
+
+    var g = null; // current gesture
+    function pt(t) { return { x: t.clientX, y: t.clientY }; }
+    function touchesArr(list) { var a = []; for (var i = 0; i < list.length; i++) a.push(list[i]); return a; }
+    function mid(a, b) { return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }; }
+    function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
+
+    function endOne(p, cancelled) {
+      if (!g) return;
+      clearTimeout(g.timer);
+      if (g.mode === 'pending' && !cancelled) {
+        if (rightNext) { rightClick(p.x, p.y); setRightNext(false); }
+        else leftClick(p.x, p.y);
+      } else if (g.mode === 'drag') {
+        mouse('mouseup', p.x, p.y, 0, 0);
+      } else if (g.mode === 'hold') {
+        mouse('mouseup', g.start.x, g.start.y, 2, 0);
+      }
+    }
+    function endTwo() {
+      if (g && g.mode === 'two' && g.panning) mouse('mouseup', g.m.x, g.m.y, 2, 0);
+    }
+
+    function onStart(e) {
+      e.preventDefault(); e.stopPropagation();
+      var ts = touchesArr(e.touches);
+      if (ts.length === 1 && !g) {
+        var p = pt(ts[0]);
+        mouse('mousemove', p.x, p.y, 0, 0);
+        g = { mode: 'pending', id: ts[0].identifier, start: p, last: p };
+        g.timer = setTimeout(function () {
+          if (g && g.mode === 'pending') {
+            /* Hold the right button until the finger lifts, so OpenTTD's
+             * right-click tooltips stay visible while pressing. */
+            g.mode = 'hold';
+            mouse('mousedown', g.start.x, g.start.y, 2, 2);
+            if (navigator.vibrate) navigator.vibrate(15);
+          }
+        }, LONG_PRESS_MS);
+      } else if (ts.length >= 2) {
+        if (g && g.mode !== 'two') { endOne(g.last, true); }
+        if (g && g.mode === 'two') return;
+        var a = ts[0], b = ts[1];
+        var m = mid(a, b);
+        g = { mode: 'two', m: m, d0: dist(a, b), panning: false, start: m };
+      }
+    }
+    function onMove(e) {
+      e.preventDefault(); e.stopPropagation();
+      if (!g) return;
+      var ts = touchesArr(e.touches);
+      if (g.mode === 'pending' || g.mode === 'drag') {
+        var t = ts.filter(function (x) { return x.identifier === g.id; })[0];
+        if (!t) return;
+        var p = pt(t);
+        if (g.mode === 'pending') {
+          if (Math.hypot(p.x - g.start.x, p.y - g.start.y) < MOVE_SLOP) return;
+          clearTimeout(g.timer);
+          if (rightNext) { setRightNext(false); }
+          g.mode = 'drag';
+          mouse('mousedown', g.start.x, g.start.y, 0, 1);
+        }
+        g.last = p;
+        mouse('mousemove', p.x, p.y, 0, 1);
+      } else if (g.mode === 'two' && ts.length >= 2) {
+        var m = mid(ts[0], ts[1]), d = dist(ts[0], ts[1]);
+        /* pinch → wheel steps */
+        var ratio = d / g.d0;
+        if (ratio > PINCH_STEP) { wheel(m.x, m.y, -100); g.d0 = d; g.zoomed = true; }
+        else if (ratio < 1 / PINCH_STEP) { wheel(m.x, m.y, 100); g.d0 = d; g.zoomed = true; }
+        /* two-finger pan → right-button drag (map follows fingers) */
+        if (!g.panning && Math.hypot(m.x - g.start.x, m.y - g.start.y) > MOVE_SLOP) {
+          g.panning = true;
+          mouse('mousemove', g.m.x, g.m.y, 0, 0);
+          mouse('mousedown', g.m.x, g.m.y, 2, 2);
+        }
+        if (g.panning) mouse('mousemove', m.x, m.y, 0, 2);
+        g.m = m;
+      }
+    }
+    function onEnd(e) {
+      e.preventDefault(); e.stopPropagation();
+      if (!g) return;
+      var ts = touchesArr(e.touches);
+      if (g.mode === 'two') {
+        if (ts.length < 2) { endTwo(); g = ts.length ? { mode: 'done' } : null; }
+        return;
+      }
+      if (ts.length === 0) {
+        var t = touchesArr(e.changedTouches).filter(function (x) { return x.identifier === g.id; })[0];
+        endOne(t ? pt(t) : g.last, e.type === 'touchcancel');
+        g = null;
+      }
+    }
+    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (type, i) {
+      stage.addEventListener(type, [onStart, onMove, onEnd, onEnd][i], { capture: true, passive: false });
+    });
+    /* Stop Safari's own gestures (pinch-zoom of the page, double-tap zoom). */
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('dblclick', function (e) { e.preventDefault(); }, { passive: false });
+
+    /* ---------------------------------------------------------------
+     * Side buttons
+     * ------------------------------------------------------------- */
+    function center() {
+      var r = canvas.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    function setRightNext(on) {
+      rightNext = on; $('b-rmb').classList.toggle('on', on);
+    }
+    function bind(id, fn) {
+      var el = $(id);
+      el.addEventListener('click', function (e) { e.preventDefault(); fn(e); });
+    }
+    bind('b-zin', function () { var c = center(); wheel(c.x, c.y, -100); });
+    bind('b-zout', function () { var c = center(); wheel(c.x, c.y, 100); });
+    bind('b-rmb', function () { setRightNext(!rightNext); if (rightNext) toast('Next tap is a right-click'); });
+    var lastEsc = 0;
+    bind('b-esc', function () {
+      /* Esc cancels the current build tool; a quick second tap also closes the
+       * frontmost window (Delete key). */
+      var now = Date.now();
+      if (now - lastEsc < 600) key('Delete', 'Delete', 46);
+      else key('Escape', 'Escape', 27);
+      lastEsc = now;
+    });
+    var kbd = $('kbd');
+    bind('b-kbd', function () {
+      if (document.activeElement === kbd) { kbd.blur(); return; }
+      kbd.value = ''; kbd.focus();
+    });
+    kbd.addEventListener('input', function () { kbd.value = ''; });
+    kbd.addEventListener('keydown', function (e) { if (e.key === 'Enter') setTimeout(function () { kbd.blur(); }, 50); });
+
+    /* ---------------------------------------------------------------
+     * Menu: help, fullscreen, save import / export
+     * ------------------------------------------------------------- */
+    bind('b-menu', function () { $('sheet').classList.add('open'); });
+    bind('m-close', function () { $('sheet').classList.remove('open'); });
+    $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) $('sheet').classList.remove('open'); });
+    bind('m-fs', function () {
+      var el = document.documentElement;
+      var req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) { req.call(el).catch && req.call(el).catch(function () {}); }
+      else toast('On iPhone use Share → Add to Home Screen for full screen', 4000);
+    });
+
+    function status(t) { $('status').textContent = t; }
+    function ensureDir(path) {
+      var parts = path.split('/').filter(Boolean), cur = '';
+      parts.forEach(function (p) { cur += '/' + p; try { FS.mkdir(cur); } catch (e) {} });
+    }
+    function sync(cb) { if (window.openttd_syncfs) window.openttd_syncfs(cb); else FS.syncfs(false, function () { cb && cb(); }); }
+    function fsReady() { return typeof FS !== 'undefined' && FS.analyzePath && FS.analyzePath(PERSONAL).exists; }
+
+    bind('m-export', function () {
+      if (!fsReady()) { status('Game is still loading.'); return; }
+      var files = [];
+      ['save', 'save/autosave', 'scenario'].forEach(function (d) {
+        var dir = PERSONAL + '/' + d;
+        try {
+          FS.readdir(dir).forEach(function (n) {
+            if (n === '.' || n === '..') return;
+            var p = dir + '/' + n;
+            if (FS.isFile(FS.stat(p).mode)) files.push({ path: p, name: n });
+          });
+        } catch (e) {}
+      });
+      if (!files.length) { status('No saved games yet.'); return; }
+      files.forEach(function (f, i) {
+        setTimeout(function () {
+          var blob = new Blob([FS.readFile(f.path)], { type: 'application/octet-stream' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob); a.download = f.name;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        }, i * 400);
+      });
+      status('Exporting ' + files.length + ' file(s) …');
+    });
+
+    var ORIG = /^(trg[1chit]r?\.grf|sample\.cat)$/i;
+    bind('m-import', function () { $('m-file').click(); });
+    $('m-file').addEventListener('change', function (e) {
+      if (!fsReady()) { status('Game is still loading — try again in a moment.'); return; }
+      var list = touchesArr(e.target.files);
+      var done = 0, placed = [], origCount = 0;
+      list.forEach(function (file) {
+        var r = new FileReader();
+        r.onload = function () {
+          var name = file.name, lower = name.toLowerCase(), dir;
+          if (ORIG.test(lower)) { dir = 'baseset'; name = lower; origCount++; }
+          else if (/\.(grf|obg|obs|obm|tar)$/.test(lower)) dir = 'content_download/newgrf';
+          else if (/\.(scn|sv0|ss0|sc1|ss1)$/.test(lower)) dir = 'scenario';
+          else if (/\.(heightmap|png)$/.test(lower)) dir = 'scenario/heightmap';
+          else dir = 'save'; // .sav, .sv1 (TTD), .sv2 (TTO) …
+          ensureDir(PERSONAL + '/' + dir);
+          FS.writeFile(PERSONAL + '/' + dir + '/' + name, new Uint8Array(r.result));
+          placed.push(name + ' → ' + dir);
+          if (++done === list.length) finish();
+        };
+        r.readAsArrayBuffer(file);
+      });
+      function finish() {
+        if (origCount) {
+          /* Original sets are found by their .obg description file, which
+           * must sit next to the data files. */
+          try {
+            FS.readdir('/baseset').forEach(function (n) {
+              if (/^orig_.*\.(obg|obs|grf)$/i.test(n)) {
+                FS.writeFile(PERSONAL + '/baseset/' + n, FS.readFile('/baseset/' + n));
+              }
+            });
+          } catch (x) { console.warn(x); }
+        }
+        sync(function () {
+          status('Imported: ' + placed.join(', ') + (origCount ? '. Reload, then pick “Original” in Game Options.' : '.'));
+        });
+        e.target.value = '';
+      }
+    });
+
+    /* Offline support */
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
+    /* Keep the screen on while playing, where supported. */
+    function wake() { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); }
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
+    wake();
+    /* Save the settings/game files to IndexedDB when the app is backgrounded. */
+    document.addEventListener('visibilitychange', function () { if (document.hidden && fsReady()) sync(); });
+  })();
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>
