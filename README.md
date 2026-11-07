@@ -17,6 +17,8 @@ offline mode and "Add to Home Screen".
   long-press = right-click (tooltips stay up while you hold).
 - **Side button bar** in the notch area: zoom in/out, "next tap is a right-click",
   Esc (cancel tool; double-tap = close top window), on-screen keyboard, menu.
+- **Works with rotation lock on**: when the phone reports portrait, the app turns itself 90° so you can
+  just hold the phone sideways (menu → "Flip upside down" switches direction).
 - **Phone-friendly first-run settings**: drag-to-scroll, right-click tooltips, monthly autosave, no survey popup.
 - **Home-screen app**: web manifest + service worker, so it runs full-screen and offline once installed.
 - **Save import/export** and **original TTD files**: import `.sav`/`.sv1` saves, or your own

@@ -79,16 +79,17 @@
     #bar { height: 6px; background: #555; margin-top: 8px; }
     #bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
 
-    /* Rotate hint */
-    #rotate {
-      display: none; position: fixed; inset: 0; z-index: 20;
-      background: #000; color: #eee; text-align: center;
-      align-items: center; justify-content: center; flex-direction: column; gap: 16px; padding: 24px;
-    }
-    #rotate svg { width: 72px; height: 72px; stroke: #eee; fill: none; stroke-width: 1.5; }
-    @media (orientation: portrait) and (max-width: 700px) {
-      #rotate { display: flex; }
-    }
+    /* Phone held sideways with rotation lock on: the browser still thinks it
+     * is portrait, so we turn the whole app 90° ourselves. Width/height are
+     * set from JS. The notch ends up on one of the short sides. */
+    #app.rot { right: auto; bottom: auto; transform-origin: 0 0; }
+    #app.rot.cw  { transform: translateX(var(--vw)) rotate(90deg);
+                   padding-left: env(safe-area-inset-top);
+                   --gutter: max(46px, env(safe-area-inset-bottom)); }
+    #app.rot.ccw { transform: translateY(var(--vh)) rotate(-90deg);
+                   padding-left: env(safe-area-inset-bottom);
+                   --gutter: max(46px, env(safe-area-inset-top)); }
+    #app.rot #sheet, #app.rot #toast { position: absolute; }
 
     /* Menu sheet */
     #sheet {
@@ -143,56 +144,53 @@
       <button id="b-kbd" aria-label="Keyboard"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
       <button id="b-menu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
-  </div>
+    <div id="sheet">
+      <div id="panel">
+        <h2>OpenTTD for phone</h2>
+        <p class="disclaimer"><b>Please note:</b> this app is intended for people who own a copy of Transport Tycoon Deluxe. If you don’t own the original game, please buy it before using this app.</p>
+        <div class="row">
+          <button id="m-close" class="primary">Back to game</button>
+          <button id="m-fs">Fullscreen</button>
+          <button id="m-flip">Flip upside down</button>
+        </div>
 
-  <div id="rotate">
-    <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M3 9a9 9 0 0 1 4-5M21 15a9 9 0 0 1-4 5"/></svg>
-    <div>Turn your phone sideways to play.</div>
-  </div>
-
-  <div id="sheet">
-    <div id="panel">
-      <h2>OpenTTD for phone</h2>
-      <p class="disclaimer"><b>Please note:</b> this app is intended for people who own a copy of Transport Tycoon Deluxe. If you don’t own the original game, please buy it before using this app.</p>
-      <div class="row">
-        <button id="m-close" class="primary">Back to game</button>
-        <button id="m-fs">Fullscreen</button>
-      </div>
-
-      <h3>Touch controls</h3>
-      <ul>
-        <li><b>Tap</b> = click. <b>Drag</b> = scroll the map, or drag-build when a tool is selected.</li>
-        <li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li>
-        <li><b>Long-press</b> = right-click (shows tooltips, closes dropdowns).</li>
-        <li>Side buttons: zoom in/out, “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li>
+        <h3>Touch controls</h3>
+        <ul>
+          <li><b>Tap</b> = click. <b>Drag</b> = scroll the map, or drag-build when a tool is selected.</li>
+          <li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li>
+          <li><b>Long-press</b> = right-click (shows tooltips, closes dropdowns).</li>
+          <li>Side buttons: zoom in/out, “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li>
+          <li><b>Rotation lock on?</b> No need to unlock it: hold the phone sideways and the game turns itself. If it is upside down, use <b>Flip upside down</b> above.</li>
         <li>If the interface is too small or big: OpenTTD menu → <i>Game Options → Graphics → Interface size</i>.</li>
-      </ul>
+        </ul>
 
-      <h3>Saves</h3>
-      <p>Games are saved inside this browser on this device. Export them now and then as a backup.</p>
-      <div class="row">
-        <button id="m-export">Export saves</button>
-        <button id="m-import">Import files…</button>
+        <h3>Saves</h3>
+        <p>Games are saved inside this browser on this device. Export them now and then as a backup.</p>
+        <div class="row">
+          <button id="m-export">Export saves</button>
+          <button id="m-import">Import files…</button>
+        </div>
+        <div id="status"></div>
+
+        <h3>Using your own original Transport Tycoon Deluxe graphics &amp; sounds</h3>
+        <p>This app ships with the free OpenGFX graphics and OpenSFX sounds. If you own TTD on a computer, you can use its original files instead:</p>
+        <ul>
+          <li>Find these files in your TTD install folder: <code>TRG1R.GRF, TRGCR.GRF, TRGHR.GRF, TRGIR.GRF, TRGTR.GRF</code> (Windows version) or <code>TRG1.GRF, TRGC.GRF, TRGH.GRF, TRGI.GRF, TRGT.GRF</code> (DOS version), plus <code>SAMPLE.CAT</code> for sounds.</li>
+          <li>Put them on your phone (e.g. iCloud Drive / Files), tap <b>Import files…</b> and select them all.</li>
+          <li>Reload, then in OpenTTD choose <i>Game Options → Graphics → Base graphics set → Original</i> (and the same for base sounds).</li>
+        </ul>
+        <p>Your original TTD <code>.SV1</code> save games can be imported the same way and loaded from <i>Load Game</i>.</p>
+
+        <h3>Install</h3>
+        <p>On iPhone: Safari → Share → <b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p>
+        <p style="color:#888">OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p>
+        <input type="file" id="m-file" multiple style="display:none">
       </div>
-      <div id="status"></div>
-
-      <h3>Using your own original Transport Tycoon Deluxe graphics &amp; sounds</h3>
-      <p>This app ships with the free OpenGFX graphics and OpenSFX sounds. If you own TTD on a computer, you can use its original files instead:</p>
-      <ul>
-        <li>Find these files in your TTD install folder: <code>TRG1R.GRF, TRGCR.GRF, TRGHR.GRF, TRGIR.GRF, TRGTR.GRF</code> (Windows version) or <code>TRG1.GRF, TRGC.GRF, TRGH.GRF, TRGI.GRF, TRGT.GRF</code> (DOS version), plus <code>SAMPLE.CAT</code> for sounds.</li>
-        <li>Put them on your phone (e.g. iCloud Drive / Files), tap <b>Import files…</b> and select them all.</li>
-        <li>Reload, then in OpenTTD choose <i>Game Options → Graphics → Base graphics set → Original</i> (and the same for base sounds).</li>
-      </ul>
-      <p>Your original TTD <code>.SV1</code> save games can be imported the same way and loaded from <i>Load Game</i>.</p>
-
-      <h3>Install</h3>
-      <p>On iPhone: Safari → Share → <b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p>
-      <p style="color:#888">OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p>
-      <input type="file" id="m-file" multiple style="display:none">
     </div>
+
+    <div id="toast"></div>
   </div>
 
-  <div id="toast"></div>
 
   <script>
   (function () {
@@ -282,7 +280,53 @@
       } catch (e) { console.warn('config', e); }
     }
 
-    window.addEventListener('orientationchange', function () { setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 300); });
+    /* ---------------------------------------------------------------
+     * Sideways mode for phones with rotation lock on.
+     * When the browser reports portrait on a phone we rotate #app by 90°.
+     * SDL measures the canvas with getBoundingClientRect(), which would
+     * give the rotated (portrait) box, so we hand it the unrotated box and
+     * convert finger positions into that same unrotated space.
+     * ------------------------------------------------------------- */
+    var app = document.getElementById('app');
+    var rot = 0; // 0 = normal, 1 = cw (phone turned anticlockwise), -1 = ccw
+    var flip = false;
+    try { flip = localStorage.getItem('ttd-flip') === '1'; } catch (e) {}
+    var realRect = Element.prototype.getBoundingClientRect;
+    canvas.getBoundingClientRect = function () {
+      if (!rot) return realRect.call(canvas);
+      var w = canvas.offsetWidth, h = canvas.offsetHeight, l = stage.offsetLeft;
+      return { left: l, top: 0, right: l + w, bottom: h, x: l, y: 0, width: w, height: h };
+    };
+    /* screen (client) point → point in #app's own, unrotated coordinates */
+    function toApp(x, y) {
+      if (rot === 1) return { x: y, y: window.innerWidth - x };
+      if (rot === -1) return { x: window.innerHeight - y, y: x };
+      return { x: x, y: y };
+    }
+    function applyRotation() {
+      var W = window.innerWidth, H = window.innerHeight;
+      var want = (H > W && W < 700) ? (flip ? -1 : 1) : 0;
+      if (want !== rot) {
+        rot = want;
+        app.classList.toggle('rot', !!rot);
+        app.classList.toggle('cw', rot === 1);
+        app.classList.toggle('ccw', rot === -1);
+      }
+      if (rot) {
+        app.style.width = H + 'px'; app.style.height = W + 'px';
+        app.style.setProperty('--vw', W + 'px'); app.style.setProperty('--vh', H + 'px');
+      } else {
+        app.style.width = app.style.height = '';
+      }
+    }
+    applyRotation();
+    function relayout() {
+      applyRotation();
+      /* SDL re-reads the canvas size on window resize */
+      window.dispatchEvent(new Event('resize'));
+    }
+    window.addEventListener('resize', function (e) { if (e.isTrusted) setTimeout(relayout, 50); });
+    window.addEventListener('orientationchange', function () { setTimeout(relayout, 300); });
 
     /* ---------------------------------------------------------------
      * Touch → mouse translation.
@@ -333,9 +377,9 @@
     }
 
     var g = null; // current gesture
-    function pt(t) { return { x: t.clientX, y: t.clientY }; }
+    function pt(t) { return toApp(t.clientX, t.clientY); }
     function touchesArr(list) { var a = []; for (var i = 0; i < list.length; i++) a.push(list[i]); return a; }
-    function mid(a, b) { return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }; }
+    function mid(a, b) { return toApp((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2); }
     function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
 
     function endOne(p, cancelled) {
@@ -472,6 +516,17 @@
     bind('b-menu', function () { $('sheet').classList.add('open'); });
     bind('m-close', function () { $('sheet').classList.remove('open'); });
     $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) $('sheet').classList.remove('open'); });
+    bind('m-flip', function () {
+      flip = !flip;
+      try { localStorage.setItem('ttd-flip', flip ? '1' : '0'); } catch (e) {}
+      relayout();
+      if (!rot) toast('Flip only applies when the phone is held sideways with rotation lock on', 4000);
+    });
+    if (rot) {
+      var seen = false;
+      try { seen = localStorage.getItem('ttd-rot-hint') === '1'; localStorage.setItem('ttd-rot-hint', '1'); } catch (e) {}
+      if (!seen) setTimeout(function () { toast('Hold your phone sideways. Upside down? Menu → Flip upside down', 6000); }, 1500);
+    }
     bind('m-fs', function () {
       var el = document.documentElement;
       var req = el.requestFullscreen || el.webkitRequestFullscreen;

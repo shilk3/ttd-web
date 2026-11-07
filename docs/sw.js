@@ -1,6 +1,6 @@
 /* Cache-first service worker so the game starts fast and works offline.
- * 15.3-20261107214152 is replaced by build.sh so every new build gets a fresh cache. */
-const CACHE = 'openttd-15.3-20261107214152';
+ * 15.3-20261107220410 is replaced by build.sh so every new build gets a fresh cache. */
+const CACHE = 'openttd-15.3-20261107220410';
 const FILES = ['./', 'index.html', 'openttd.js', 'openttd.wasm', 'openttd.data',
   'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
