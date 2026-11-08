@@ -1,0 +1,219 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2891bee..6dc8aad 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -366,7 +366,7 @@ if(EMSCRIPTEN)
+     add_definitions(-s DISABLE_EXCEPTION_CATCHING=0)
+ 
+     # Export functions to Javascript.
+-    target_link_libraries(WASM::WASM INTERFACE "-s EXPORTED_FUNCTIONS='[\"_main\", \"_em_openttd_add_server\"]' -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]'")
++    target_link_libraries(WASM::WASM INTERFACE "-s EXPORTED_FUNCTIONS='[\"_main\", \"_em_openttd_add_server\", \"_em_openttd_quicksave\", \"_em_openttd_undo\", \"_em_openttd_undo_count\", \"_em_openttd_load_game\"]' -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]'")
+ 
+     # Preload all the files we generate during build.
+     # As we do not compile with FreeType / FontConfig, we also have no way to
+diff --git a/src/command.cpp b/src/command.cpp
+index ce4a948..7da3d57 100644
+--- a/src/command.cpp
++++ b/src/command.cpp
+@@ -61,6 +61,11 @@
+ 
+ #include "table/strings.h"
+ 
++#ifdef __EMSCRIPTEN__
++void WebUndoBeforeCommand(Commands cmd);
++void WebUndoCommandResult(bool succeeded);
++#endif
++
+ #include "safeguards.h"
+ 
+ 
+@@ -222,6 +227,10 @@ std::tuple<bool, bool, bool> CommandHelperBase::InternalPostBefore(Commands cmd,
+ 			WL_INFO, TileX(tile) * TILE_SIZE, TileY(tile) * TILE_SIZE);
+ 		return { true, estimate_only, only_sending };
+ 	} else {
++#ifdef __EMSCRIPTEN__
++		/* Web/phone build: snapshot for "Back" before the player's own actions. */
++		if (!estimate_only && !only_sending && !network_command && IsLocalCompany() && !_generating_world) WebUndoBeforeCommand(cmd);
++#endif
+ 		return { false, estimate_only, only_sending };
+ 	}
+ }
+@@ -237,6 +246,9 @@ std::tuple<bool, bool, bool> CommandHelperBase::InternalPostBefore(Commands cmd,
+  */
+ void CommandHelperBase::InternalPostResult(CommandCost &res, TileIndex tile, bool estimate_only, bool only_sending, StringID err_message, bool my_cmd)
+ {
++#ifdef __EMSCRIPTEN__
++	if (!estimate_only && !only_sending) WebUndoCommandResult(res.Succeeded());
++#endif
+ 	int x = TileX(tile) * TILE_SIZE;
+ 	int y = TileY(tile) * TILE_SIZE;
+ 
+diff --git a/src/openttd.cpp b/src/openttd.cpp
+index 7d585b0..eb1598f 100644
+--- a/src/openttd.cpp
++++ b/src/openttd.cpp
+@@ -93,6 +93,11 @@
+ #	include <emscripten/html5.h>
+ #endif
+ 
++#ifdef __EMSCRIPTEN__
++#	include <deque>
++#	include <emscripten.h>
++#endif
++
+ #include "safeguards.h"
+ 
+ void CallLandscapeTick();
+@@ -1015,8 +1020,139 @@ static void UpdateSocialIntegration(GameMode game_mode)
+ 	}
+ }
+ 
++#ifdef __EMSCRIPTEN__
++/*
++ * Web/phone build helpers, called from the page (see os/emscripten and the
++ * page's JavaScript):
++ *  - quick save when the app is sent to the background,
++ *  - "Back": a few in-memory snapshots taken just before the player's own
++ *    actions, restored by loading them,
++ *  - load a savegame by path (for the "Continue" button).
++ * Snapshots live in /tmp, which is memory only and never persisted.
++ */
++static std::deque<std::string> _web_undo_stack; ///< Snapshot files, oldest first.
++static uint _web_undo_counter = 0;              ///< For unique snapshot file names.
++static std::chrono::steady_clock::time_point _web_last_snapshot{};
++static bool _web_snapshot_pending = false;      ///< A snapshot was just taken for the command being executed.
++static bool _web_undo_loading = false;          ///< We are loading a snapshot (keep the stack).
++static std::string _web_undo_saved_name;        ///< _file_to_saveload.name to restore after an undo.
++static EncodedString _web_undo_saved_title;     ///< _file_to_saveload.title to restore after an undo.
++static constexpr size_t WEB_UNDO_STEPS = 5;     ///< How many actions can be undone.
++static constexpr auto WEB_UNDO_MERGE = std::chrono::milliseconds(500); ///< Actions closer together than this are one step.
++
++static void WebUndoNotify()
++{
++	EM_ASM({ if (window["openttd_undo_changed"]) openttd_undo_changed($0); }, (int)_web_undo_stack.size());
++}
++
++static void WebUndoClear()
++{
++	for (const auto &f : _web_undo_stack) FioRemove(f);
++	_web_undo_stack.clear();
++	_web_snapshot_pending = false;
++	WebUndoNotify();
++}
++
++/** Called just before the local player's command is executed. */
++void WebUndoBeforeCommand(Commands cmd)
++{
++	_web_snapshot_pending = false;
++	if (_game_mode != GM_NORMAL || _networking || _web_undo_loading || cmd == CMD_PAUSE) return;
++
++	auto now = std::chrono::steady_clock::now();
++	if (!_web_undo_stack.empty() && now - _web_last_snapshot < WEB_UNDO_MERGE) {
++		_web_last_snapshot = now; // part of the same step (e.g. a drag that issues several commands)
++		return;
++	}
++
++	std::string path = fmt::format("/tmp/undo-{}.sav", _web_undo_counter++);
++	std::string format = _savegame_format;
++	_savegame_format = "none"; // fastest; these never leave memory
++	SaveOrLoadResult res = SaveOrLoad(path, SLO_SAVE, DFT_GAME_FILE, NO_DIRECTORY, false);
++	_savegame_format = format;
++	if (res != SL_OK) return;
++
++	_web_undo_stack.push_back(path);
++	while (_web_undo_stack.size() > WEB_UNDO_STEPS) {
++		FioRemove(_web_undo_stack.front());
++		_web_undo_stack.pop_front();
++	}
++	_web_last_snapshot = now;
++	_web_snapshot_pending = true;
++	WebUndoNotify();
++}
++
++/** Called after that command ran; a failed command should not use up an undo step. */
++void WebUndoCommandResult(bool succeeded)
++{
++	if (!_web_snapshot_pending) return;
++	_web_snapshot_pending = false;
++	if (succeeded || _web_undo_stack.empty()) return;
++	FioRemove(_web_undo_stack.back());
++	_web_undo_stack.pop_back();
++	_web_last_snapshot = {};
++	WebUndoNotify();
++}
++
++/** Called once a snapshot has been loaded (or failed to load). */
++static void WebUndoAfterLoad()
++{
++	FioRemove(_file_to_saveload.name);
++	_file_to_saveload.name = _web_undo_saved_name;
++	_file_to_saveload.title = _web_undo_saved_title;
++	_web_undo_loading = false;
++	WebUndoNotify();
++}
++
++extern "C" {
++
++/** Save the running game now (app going to the background). @return 1 on success. */
++int CDECL em_openttd_quicksave()
++{
++	if (_game_mode != GM_NORMAL || _networking || _switch_mode != SM_NONE) return 0;
++	return SaveOrLoad("phone-quicksave.sav", SLO_SAVE, DFT_GAME_FILE, AUTOSAVE_DIR, false) == SL_OK ? 1 : 0;
++}
++
++/** Undo the last action. @return steps left, or -1 if there was nothing to undo. */
++int CDECL em_openttd_undo()
++{
++	if (_game_mode != GM_NORMAL || _web_undo_stack.empty() || _switch_mode != SM_NONE) return -1;
++	std::string path = _web_undo_stack.back();
++	_web_undo_stack.pop_back();
++	_web_undo_saved_name = _file_to_saveload.name;
++	_web_undo_saved_title = _file_to_saveload.title;
++	_file_to_saveload.SetMode(FIOS_TYPE_FILE, SLO_LOAD);
++	_file_to_saveload.name = path;
++	_web_undo_loading = true;
++	_switch_mode = SM_LOAD_GAME;
++	return (int)_web_undo_stack.size();
++}
++
++/** How many actions can be undone. */
++int CDECL em_openttd_undo_count()
++{
++	return (int)_web_undo_stack.size();
++}
++
++/** Load a savegame by its full path (the "Continue" button). */
++void CDECL em_openttd_load_game(const char *path)
++{
++	if (_switch_mode != SM_NONE) return;
++	_file_to_saveload.SetMode(FIOS_TYPE_FILE, SLO_LOAD);
++	_file_to_saveload.name = path;
++	_file_to_saveload.title = {};
++	_switch_mode = SM_LOAD_GAME;
++}
++
++}
++#endif /* __EMSCRIPTEN__ */
++
+ void SwitchToMode(SwitchMode new_mode)
+ {
++#ifdef __EMSCRIPTEN__
++	/* Undo steps belong to the game being played; anything but saving or an undo starts afresh. */
++	if (!_web_undo_loading && new_mode != SM_SAVE_GAME && new_mode != SM_SAVE_HEIGHTMAP) WebUndoClear();
++#endif
+ 	/* If we are saving something, the network stays in its current state */
+ 	if (new_mode != SM_SAVE_GAME) {
+ 		/* If the network is active, make it not-active */
+@@ -1100,7 +1236,11 @@ void SwitchToMode(SwitchMode new_mode)
+ 			ResetGRFConfig(true);
+ 			ResetWindowSystem();
+ 
+-			if (!SafeLoad(_file_to_saveload.name, _file_to_saveload.file_op, _file_to_saveload.ftype.detailed, GM_NORMAL, NO_DIRECTORY)) {
++			bool loaded = SafeLoad(_file_to_saveload.name, _file_to_saveload.file_op, _file_to_saveload.ftype.detailed, GM_NORMAL, NO_DIRECTORY);
++#ifdef __EMSCRIPTEN__
++			if (_web_undo_loading) WebUndoAfterLoad();
++#endif
++			if (!loaded) {
+ 				ShowErrorMessage(GetSaveLoadErrorType(), GetSaveLoadErrorMessage(), WL_CRITICAL);
+ 			} else {
+ 				if (_file_to_saveload.ftype.abstract == FT_SCENARIO) {

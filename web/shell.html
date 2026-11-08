@@ -49,7 +49,7 @@
       position: relative; z-index: 6; /* always above the game canvas */
       width: var(--gutter); flex: none; height: 100%;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      gap: 8px; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;
+      gap: 7px; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;
       background: #111;
     }
     #controls button {
@@ -60,6 +60,8 @@
       display: flex; align-items: center; justify-content: center;
       touch-action: manipulation;
     }
+    #app.rot #controls { padding-bottom: 0; }
+    #controls button:disabled { opacity: .35; }
     #controls button.on { background: var(--accent); color: #111; border-color: #f0d080; }
     #controls button:active { filter: brightness(1.3); }
     #controls svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -194,6 +196,7 @@
       <button id="b-zout" aria-label="Zoom out"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M7 10h6M15 15l5 5"/></svg></button>
       <button id="b-aim" aria-label="Aim mode (trackpad cursor + click button)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
       <button id="b-rmb" aria-label="Next tap is a right-click"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v7"/><path d="M12 3a6 6 0 0 1 6 6v1h-6z" fill="currentColor"/></svg></button>
+      <button id="b-undo" aria-label="Back (undo last action)" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
       <button id="b-esc" aria-label="Close windows / cancel tool"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       <button id="b-kbd" aria-label="Keyboard"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
       <button id="b-menu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
@@ -321,10 +324,23 @@
 
     /* First run: phone-friendly defaults. Only written when no config exists,
      * so anything changed in-game is kept. */
+    /* One-time change for configs written by older versions of this app:
+     * autosave every minute instead of every 10. Changing it in-game later is kept. */
+    function migrateConfig(cfg) {
+      var done = false;
+      try { done = localStorage.getItem('ttd-autosave-1min') === '1'; } catch (e) {}
+      if (done) return;
+      var text = FS.readFile(cfg, { encoding: 'utf8' });
+      text = text.replace(/^autosave\s*=.*$/m, '').replace(/^autosave_interval\s*=.*$/m, '');
+      if (/^\[gui\]\s*$/m.test(text)) text = text.replace(/^\[gui\]\s*$/m, '[gui]\nautosave_interval = 1');
+      else text += '\n[gui]\nautosave_interval = 1\n';
+      FS.writeFile(cfg, text);
+      try { localStorage.setItem('ttd-autosave-1min', '1'); } catch (e) {}
+    }
     function writeDefaultConfig() {
       try {
         var cfg = PERSONAL + '/openttd.cfg';
-        try { FS.stat(cfg); return; } catch (e) { /* not there yet */ }
+        try { FS.stat(cfg); migrateConfig(cfg); return; } catch (e) { /* not there yet */ }
         var shortSide = Math.min(window.innerWidth, window.innerHeight);
         var scale = shortSide >= 700 ? 150 : 100;
         FS.writeFile(cfg, [
@@ -334,7 +350,8 @@
           '[gui]',
           '; 3 = drag the map with one finger (left button)',
           'scroll_mode = 3',
-          'autosave = monthly',
+          '; autosave every minute, so little is lost if the app is closed in a hurry',
+          'autosave_interval = 1',
           'show_finances = true',
           'hover_delay_ms = 0',
           '',
@@ -950,7 +967,50 @@
     document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
     wake();
     /* Save the settings/game files to IndexedDB when the app is backgrounded. */
-    document.addEventListener('visibilitychange', function () { if (document.hidden && fsReady()) sync(); });
+    /* ---------------------------------------------------------------
+     * Always saved: save the game the moment the app goes to the background
+     * (Home Screen, app switcher, phone call...). Autosave also runs every
+     * minute as a backup.
+     * ------------------------------------------------------------- */
+    var lastQuick = 0;
+    function quickSave() {
+      if (!fsReady() || !Module._em_openttd_quicksave || Date.now() - lastQuick < 3000) return;
+      lastQuick = Date.now();
+      try { Module._em_openttd_quicksave(); } catch (e) { console.warn('quicksave', e); }
+      sync();
+    }
+    document.addEventListener('visibilitychange', function () { if (document.hidden) quickSave(); });
+    window.addEventListener('pagehide', quickSave);
+
+    /* Continue: newest save or autosave (the main menu asks us). */
+    function savesNewestFirst() {
+      var list = [];
+      ['save', 'save/autosave'].forEach(function (d) {
+        var dir = PERSONAL + '/' + d;
+        try {
+          FS.readdir(dir).forEach(function (n) {
+            if (!/\.sav$/i.test(n)) return;
+            var st = FS.stat(dir + '/' + n);
+            if (FS.isFile(st.mode)) list.push({ path: dir + '/' + n, t: +st.mtime });
+          });
+        } catch (e) {}
+      });
+      return list.sort(function (a, b) { return b.t - a.t; });
+    }
+    window.openttd_has_save = function () { return savesNewestFirst().length > 0 ? 1 : 0; };
+    window.openttd_continue = function () {
+      var s = savesNewestFirst()[0];
+      if (s) Module.cwrap('em_openttd_load_game', null, ['string'])(s.path);
+    };
+
+    /* Back: undo the last action (up to 5). */
+    window.openttd_undo_changed = function (n) { $('b-undo').disabled = !(n > 0); };
+    bind('b-undo', function () {
+      if (!Module._em_openttd_undo) return;
+      var left = Module._em_openttd_undo();
+      if (left < 0) toast('Nothing to undo');
+      else toast(left > 0 ? 'Undone (' + left + ' more step' + (left === 1 ? '' : 's') + ' available)' : 'Undone');
+    });
   })();
   </script>
   {{{ SCRIPT }}}
