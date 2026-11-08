@@ -28,6 +28,11 @@ offline mode and "Add to Home Screen".
 - **Trimmed game UI** (`patches/0002`): no zoom buttons in the toolbar (the page has its own) with the
   other buttons widened to fill the space, and no Exit button in the main menu, whose buttons are larger.
 - **Solid black status bar** on iPhone, so the game never sits under the clock or Dynamic Island.
+- **Always saved** (`patches/0004`): autosave every minute, an extra save the moment the app goes to the
+  background, and a **Continue** button at the top of the main menu that loads the newest save.
+- **Back (undo)** (`patches/0004`): up to 5 in-memory snapshots taken just before the player's own
+  actions (failed actions don't count; actions within half a second are one step). Back reloads the
+  latest one.
 - **Phone-friendly first-run settings**: drag-to-scroll, right-click tooltips, monthly autosave, no survey popup.
 - **Home-screen app**: web manifest + service worker, so it runs full-screen and offline once installed.
 - **Save import/export** and **original TTD files**: import `.sav`/`.sv1` saves, or your own
