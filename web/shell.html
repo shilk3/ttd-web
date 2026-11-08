@@ -179,6 +179,7 @@
           <button id="m-close" class="primary">Back to game</button>
           <button id="m-fs">Fullscreen</button>
           <button id="m-flip">Flip upside down</button>
+          <button id="m-update" class="primary" style="display:none">Reload to update</button>
         </div>
 
         <h3>Aim mode</h3>
@@ -219,7 +220,8 @@
 
         <h3>Install</h3>
         <p>On iPhone: Safari → Share → <b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p>
-        <p style="color:#888">OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p>
+        <p id="m-version" style="color:#888"></p>
+      <p style="color:#888">OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p>
         <input type="file" id="m-file" multiple style="display:none">
       </div>
     </div>
@@ -757,8 +759,30 @@
     });
 
     /* Offline support */
-    if ('serviceWorker' in navigator && location.protocol === 'https:') {
-      navigator.serviceWorker.register('sw.js').catch(function () {});
+    var loadedAt = Date.now();
+    function reloadNow() {
+      if (fsReady()) sync(function () { location.reload(); }); else location.reload();
+    }
+    bind('m-update', function () { reloadNow(); });
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1')) {
+      navigator.serviceWorker.addEventListener('message', function (e) {
+        if (!e.data || e.data.type !== 'updated') return;
+        /* Just opened (still on the title screen, most likely)? Switch straight away.
+         * Otherwise don't interrupt the game: offer the update in the menu. */
+        if (Date.now() - loadedAt < 45000) { reloadNow(); return; }
+        $('m-update').style.display = '';
+        toast('Update ready: save your game, then Menu → Reload to update', 6000);
+      });
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+        reg.update().catch(function () {});
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) reg.update().catch(function () {});
+        });
+      }).catch(function () {});
+      if (window.caches) caches.keys().then(function (k) {
+        var v = k.filter(function (n) { return n.indexOf('openttd-') === 0; })[0];
+        if (v) $('m-version').textContent = 'Version ' + v.replace('openttd-', '');
+      }).catch(function () {});
     }
     /* Keep the screen on while playing, where supported. */
     function wake() { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); }
