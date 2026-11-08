@@ -632,37 +632,83 @@
       }
     }
     function inside(el, x, y) { var r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
-    var pressId = null, pressOut = false;
-    cbtn.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
-    cbtn.addEventListener('pointerdown', function (e) {
-      e.preventDefault();
-      if (pressId !== null || !cur) return;
-      pressId = e.pointerId; pressOut = false;
-      try { cbtn.setPointerCapture(e.pointerId); } catch (x) {}
+    /* One press of the CLICK button: start → (move) → finish. Touches are followed
+     * with touch events, which keep reporting to the button even after the finger
+     * slides off it and always report the lift (iPhone did not always send the
+     * matching pointer event, which left the button stuck on CANCEL). Mouse
+     * presses (computers) use pointer events. Every way a press can end goes
+     * through finishPress(), which is safe to call more than once. */
+    var press = null; // { id, out }
+    function startPress(id) {
+      if (press) finishPress(true);          // a missed lift: clean it up first
+      if (!cur) return;
+      press = { id: id, out: false };
       held = rightNext ? 2 : 1;
       if (rightNext) setRightNext(false);
       cbtn.classList.add('down');
       mouse('mousemove', cur.x, cur.y, 0, 0);
       mouse('mousedown', cur.x, cur.y, held === 2 ? 2 : 0, held === 2 ? 2 : 1);
-    });
-    cbtn.addEventListener('pointermove', function (e) {
-      if (e.pointerId !== pressId) return;
-      pressOut = !inside(cbtn, e.clientX, e.clientY);
-      cbtn.classList.toggle('cancel', pressOut);
-      cbtn.textContent = pressOut ? 'CANCEL' : (held === 2 ? 'RIGHT' : 'CLICK');
-    });
-    function release(e) {
-      if (e.pointerId !== pressId) return;
-      var b = held, cancel = pressOut || e.type === 'pointercancel';
-      pressId = null; held = 0;
+    }
+    function movePress(x, y) {
+      if (!press) return;
+      press.out = !inside(cbtn, x, y);
+      cbtn.classList.toggle('cancel', press.out);
+      cbtn.textContent = press.out ? 'CANCEL' : (held === 2 ? 'RIGHT' : 'CLICK');
+    }
+    function finishPress(cancel) {
+      if (!press) return;
+      var b = held;
+      cancel = cancel || press.out;
+      press = null; held = 0;
       cbtn.classList.remove('down', 'cancel');
       updateBtnLabel();
       var up = function () { mouse('mouseup', cur.x, cur.y, b === 2 ? 2 : 0, 0); };
       if (cancel && b === 1) { key('Escape', 'Escape', 27); setTimeout(up, 60); }
       else up();
     }
-    cbtn.addEventListener('pointerup', release);
-    cbtn.addEventListener('pointercancel', release);
+    function findTouch(list, id) { for (var i = 0; i < list.length; i++) if (list[i].identifier === id) return list[i]; return null; }
+    cbtn.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      var t = e.changedTouches[0];
+      if (t) startPress('t' + t.identifier);
+    }, { passive: false });
+    cbtn.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+      if (!press) return;
+      var t = findTouch(e.changedTouches, +String(press.id).slice(1));
+      if (t) movePress(t.clientX, t.clientY);
+    }, { passive: false });
+    function touchEnded(e) {
+      if (!press || String(press.id).charAt(0) !== 't') return;
+      var id = +String(press.id).slice(1);
+      var t = findTouch(e.changedTouches, id);
+      if (t) { movePress(t.clientX, t.clientY); finishPress(e.type === 'touchcancel'); }
+      else if (!findTouch(e.touches, id)) finishPress(true); // our finger is gone without us hearing: cancel safely
+    }
+    cbtn.addEventListener('touchend', touchEnded);
+    cbtn.addEventListener('touchcancel', touchEnded);
+    /* belt and braces: any lift anywhere also checks that our finger is still down */
+    document.addEventListener('touchend', touchEnded, true);
+    document.addEventListener('touchcancel', touchEnded, true);
+    /* mouse (computers) */
+    cbtn.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch') return;
+      e.preventDefault();
+      startPress('p' + e.pointerId);
+      try { cbtn.setPointerCapture(e.pointerId); } catch (x) {}
+    });
+    cbtn.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch' || !press || press.id !== 'p' + e.pointerId) return;
+      movePress(e.clientX, e.clientY);
+    });
+    function pointerEnded(e) {
+      if (e.pointerType === 'touch' || !press || press.id !== 'p' + e.pointerId) return;
+      if (e.type === 'pointerup') movePress(e.clientX, e.clientY);
+      finishPress(e.type !== 'pointerup');
+    }
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (t) { cbtn.addEventListener(t, pointerEnded); });
+    /* leaving the app mid-press: let go safely */
+    document.addEventListener('visibilitychange', function () { if (document.hidden) finishPress(true); });
     function updateBtnLabel() {
       cbtn.textContent = rightNext ? 'RIGHT' : 'CLICK';
       cbtn.classList.toggle('rmb', rightNext);
