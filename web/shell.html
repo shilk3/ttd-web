@@ -33,6 +33,7 @@
     }
     #app {
       position: fixed; inset: 0;
+      box-sizing: border-box; /* notch padding counts inside the width (sideways mode sets an exact width) */
       display: flex; flex-direction: row;
       padding-left: var(--pad-left);
     }
@@ -45,6 +46,7 @@
       touch-action: none;
     }
     #controls {
+      position: relative; z-index: 6; /* always above the game canvas */
       width: var(--gutter); flex: none; height: 100%;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       gap: 8px; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;

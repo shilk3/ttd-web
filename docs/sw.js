@@ -1,12 +1,12 @@
 /* Service worker: keeps a copy of the game so it starts fast and works offline.
- * 15.3-20261108000947 is replaced by build.sh, so every build is a new worker + cache.
+ * 15.3-20261108002337 is replaced by build.sh, so every build is a new worker + cache.
  *
  * Updating: the browser fetches sw.js on every launch; a changed file installs
  * this worker, which downloads the new game files (bypassing the HTTP cache),
  * takes over, deletes old copies and tells open pages, which decide themselves
  * when to reload. (Forcing a reload from here with client.navigate() froze a
  * running game page in testing, so we never do that.) */
-const CACHE = 'openttd-15.3-20261108000947';
+const CACHE = 'openttd-15.3-20261108002337';
 const FILES = ['./', 'index.html', 'openttd.js', 'openttd.wasm', 'openttd.data',
   'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
