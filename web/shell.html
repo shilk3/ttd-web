@@ -92,6 +92,12 @@
                    padding-left: env(safe-area-inset-bottom);
                    --gutter: max(46px, env(safe-area-inset-top)); }
     #app.rot #sheet, #app.rot #toast { position: absolute; }
+    /* keep the menu clear of the notch / Dynamic Island and the home bar */
+    #sheet { box-sizing: border-box;
+             padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+                      max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+    #app.rot.cw #sheet  { padding: 8px var(--gutter) 8px max(8px, env(safe-area-inset-top)); }
+    #app.rot.ccw #sheet { padding: 8px max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
 
     /* Aim mode: trackpad cursor + click button */
     #aimring {
@@ -126,8 +132,9 @@
     #sheet.open { display: flex; }
     #panel {
       background: #2b2b2b; border: 1px solid #6c6c6c; border-radius: 10px;
-      width: min(560px, 90vw); max-height: 86vh; overflow-y: auto;
-      padding: 14px 16px; box-sizing: border-box; touch-action: pan-y;
+      /* % of the sheet, not vw/vh: in sideways mode the viewport units are the upright screen */
+      width: min(560px, 100%); max-height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 14px 16px; box-sizing: border-box; touch-action: pan-x pan-y;
       -webkit-user-select: text; user-select: text;
     }
     #panel h2 { margin: 0 0 8px; font-size: 17px; color: var(--accent); }
@@ -176,7 +183,7 @@
     <div id="sheet">
       <div id="panel">
         <h2>OpenTTD for phone</h2>
-        <p class="disclaimer"><b>Please note:</b> this app is intended for people who own a copy of Transport Tycoon Deluxe. If you don’t own the original game, please buy it before using this app.</p>
+        <p class="disclaimer"><b>Please note:</b>&nbsp;this app is intended for people who own a copy of Transport Tycoon Deluxe. If you don’t own the original game, please buy it before using this app.</p>
         <div class="row">
           <button id="m-close" class="primary">Back to game</button>
           <button id="m-fs">Fullscreen</button>
@@ -185,7 +192,7 @@
         </div>
 
         <h3>Aim mode</h3>
-      <p>Turn on with the <b>crosshair</b> button. One finger slides the cursor like a laptop trackpad (it never clicks by itself); the round <b>CLICK</b> button does the clicking: tap = click, hold = mouse button held down (slide your other finger to drag-build, release to finish). To cancel a hold, slide your thumb off the button before letting go (this also drops the selected build tool). For a right-click, press the right-click side button first. Two fingers still scroll and zoom.</p>
+      <p>Turn on with the&nbsp;<b>crosshair</b>&nbsp;button. One finger slides the cursor like a laptop trackpad (it never clicks by itself); the round&nbsp;<b>CLICK</b>&nbsp;button does the clicking: tap = click, hold = mouse button held down (slide your other finger to drag-build, release to finish). To cancel a hold, slide your thumb off the button before letting go (this also drops the selected build tool). For a right-click, press the right-click side button first. Two fingers still scroll and zoom.</p>
       <div class="row">
         <button id="m-tapjump" class="toggle">Off</button><span style="align-self:center;color:#ccc">Tap on the map moves the cursor there</span>
       </div>
@@ -195,12 +202,12 @@
 
       <h3>Touch controls</h3>
         <ul>
-          <li><b>Tap</b> = click. <b>Drag</b> = scroll the map, or drag-build when a tool is selected.</li>
+          <li><b>Tap</b>&nbsp;= click.&nbsp;<b>Drag</b>&nbsp;= scroll the map, or drag-build when a tool is selected.</li>
           <li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li>
-          <li><b>Long-press</b> = right-click (shows tooltips, closes dropdowns).</li>
+          <li><b>Long-press</b>&nbsp;= right-click (shows tooltips, closes dropdowns).</li>
           <li>Side buttons: zoom in/out, “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li>
-          <li><b>Rotation lock on?</b> No need to unlock it: hold the phone sideways and the game turns itself. If it is upside down, use <b>Flip upside down</b> above.</li>
-        <li>If the interface is too small or big: OpenTTD menu → <i>Game Options → Graphics → Interface size</i>.</li>
+          <li><b>Rotation lock on?</b>&nbsp;No need to unlock it: hold the phone sideways and the game turns itself. If it is upside down, use&nbsp;<b>Flip upside down</b>&nbsp;above.</li>
+        <li>If the interface is too small or big: OpenTTD menu →&nbsp;<i>Game Options → Graphics → Interface size</i>.</li>
         </ul>
 
         <h3>Saves</h3>
@@ -214,14 +221,14 @@
         <h3>Using your own original Transport Tycoon Deluxe graphics &amp; sounds</h3>
         <p>This app ships with the free OpenGFX graphics and OpenSFX sounds. If you own TTD on a computer, you can use its original files instead:</p>
         <ul>
-          <li>Find these files in your TTD install folder: <code>TRG1R.GRF, TRGCR.GRF, TRGHR.GRF, TRGIR.GRF, TRGTR.GRF</code> (Windows version) or <code>TRG1.GRF, TRGC.GRF, TRGH.GRF, TRGI.GRF, TRGT.GRF</code> (DOS version), plus <code>SAMPLE.CAT</code> for sounds.</li>
-          <li>Put them on your phone (e.g. iCloud Drive / Files), tap <b>Import files…</b> and select them all.</li>
-          <li>Reload, then in OpenTTD choose <i>Game Options → Graphics → Base graphics set → Original</i> (and the same for base sounds).</li>
+          <li>Find these files in your TTD install folder:&nbsp;<code>TRG1R.GRF, TRGCR.GRF, TRGHR.GRF, TRGIR.GRF, TRGTR.GRF</code>&nbsp;(Windows version) or&nbsp;<code>TRG1.GRF, TRGC.GRF, TRGH.GRF, TRGI.GRF, TRGT.GRF</code>&nbsp;(DOS version), plus&nbsp;<code>SAMPLE.CAT</code>&nbsp;for sounds.</li>
+          <li>Put them on your phone (e.g. iCloud Drive / Files), tap&nbsp;<b>Import files…</b>&nbsp;and select them all.</li>
+          <li>Reload, then in OpenTTD choose&nbsp;<i>Game Options → Graphics → Base graphics set → Original</i>&nbsp;(and the same for base sounds).</li>
         </ul>
-        <p>Your original TTD <code>.SV1</code> save games can be imported the same way and loaded from <i>Load Game</i>.</p>
+        <p>Your original TTD&nbsp;<code>.SV1</code>&nbsp;save games can be imported the same way and loaded from&nbsp;<i>Load Game</i>.</p>
 
         <h3>Install</h3>
-        <p>On iPhone: Safari → Share → <b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p>
+        <p>On iPhone: Safari → Share →&nbsp;<b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p>
         <p id="m-version" style="color:#888"></p>
       <p style="color:#888">OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p>
         <input type="file" id="m-file" multiple style="display:none">
