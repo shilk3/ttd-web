@@ -23,13 +23,18 @@ offline mode and "Add to Home Screen".
   Esc (cancel tool; double-tap = close top window), on-screen keyboard, menu.
 - **Works with rotation lock on**: when the phone reports portrait, the app turns itself 90° so you can
   just hold the phone sideways (menu → "Flip upside down" switches direction).
+- **In-app keyboard** that turns with the game (the iPhone keyboard cannot). It opens by itself when
+  a text box is being edited, and slides the game up so the box stays visible (`patches/0003`).
+- **Trimmed game UI** (`patches/0002`): no zoom buttons in the toolbar (the page has its own) with the
+  other buttons widened to fill the space, and no Exit button in the main menu, whose buttons are larger.
+- **Solid black status bar** on iPhone, so the game never sits under the clock or Dynamic Island.
 - **Phone-friendly first-run settings**: drag-to-scroll, right-click tooltips, monthly autosave, no survey popup.
 - **Home-screen app**: web manifest + service worker, so it runs full-screen and offline once installed.
 - **Save import/export** and **original TTD files**: import `.sav`/`.sv1` saves, or your own
   original TTD `TRG*.GRF` + `SAMPLE.CAT` files to play with the original graphics and sounds.
   (They stay on your device; this repo does not include any original game files.)
-- Small engine patch (`patches/`): right-button drag scrolls the map in every scroll mode,
-  which is what the two-finger pan uses.
+- Engine patches (`patches/`): right-button drag scrolls the map in every scroll mode (two-finger pan),
+  plus the toolbar/main menu and text-box changes above.
 
 Ships with the free [OpenGFX](https://github.com/OpenTTD/OpenGFX) graphics and
 [OpenSFX](https://github.com/OpenTTD/OpenSFX) sounds. No music (the browser build has no MIDI player).

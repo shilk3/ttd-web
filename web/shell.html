@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="OpenTTD">
   <meta name="theme-color" content="#000000">
   <link rel="manifest" href="manifest.webmanifest">
@@ -63,10 +63,28 @@
     #controls button.on { background: var(--accent); color: #111; border-color: #f0d080; }
     #controls button:active { filter: brightness(1.3); }
     #controls svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    #kbd {
-      position: absolute; left: 0; top: 0; width: 1px; height: 1px;
-      opacity: 0; border: 0; padding: 0; font-size: 16px; /* 16px stops iOS from zooming */
+    /* In-app keyboard. It turns with the app (the iPhone keyboard cannot), and the
+     * game area shrinks above it so text boxes stay visible. */
+    #vkb {
+      position: absolute; left: 0; right: 0; bottom: 0; height: var(--kbh, 0px);
+      display: none; flex-direction: column; gap: 5px; padding: 6px 4px;
+      box-sizing: border-box; background: #1c1c1e; z-index: 7;
+      touch-action: none; -webkit-user-select: none; user-select: none;
     }
+    .kbd-open #vkb { display: flex; }
+    .kbd-open #clickbtn { bottom: calc(var(--kbh) + 10px); }
+    #vkb .row { flex: 1; display: flex; gap: 5px; justify-content: center; min-height: 0; }
+    #vkb .k {
+      flex: 1 1 0; max-width: 64px; border-radius: 6px; background: #4a4a4e; color: #f2f2f2;
+      display: flex; align-items: center; justify-content: center;
+      font: 500 17px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+      box-shadow: 0 1px 0 #000;
+    }
+    #vkb .k.wide { flex-grow: 1.5; max-width: 96px; background: #2f2f33; font-size: 14px; }
+    #vkb .k.space { flex-grow: 5; max-width: none; }
+    #vkb .k.enter { flex-grow: 1.8; max-width: 110px; background: var(--accent); color: #111; }
+    #vkb .k.on { background: #e8e8e8; color: #111; }
+    #vkb .k.down { filter: brightness(1.6); transform: translateY(1px); }
 
     /* Loading / message box */
     #loader {
@@ -163,7 +181,7 @@
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
       <div id="aimring"></div>
       <div id="clickbtn">CLICK</div>
-      <input id="kbd" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+      <div id="vkb"></div>
       <div id="loader">
         <div id="box">
           <div id="title">Loading …</div>
@@ -341,8 +359,8 @@
     var realRect = Element.prototype.getBoundingClientRect;
     canvas.getBoundingClientRect = function () {
       if (!rot) return realRect.call(canvas);
-      var w = canvas.offsetWidth, h = canvas.offsetHeight, l = stage.offsetLeft;
-      return { left: l, top: 0, right: l + w, bottom: h, x: l, y: 0, width: w, height: h };
+      var w = canvas.offsetWidth, h = canvas.offsetHeight, l = stage.offsetLeft, t = canvas.offsetTop;
+      return { left: l, top: t, right: l + w, bottom: t + h, x: l, y: t, width: w, height: h };
     };
     /* screen (client) point → point in #app's own, unrotated coordinates */
     function toApp(x, y) {
@@ -446,7 +464,7 @@
     }
 
     function onStart(e) {
-      if (e.target === cbtn) return;
+      if (e.target === cbtn || vkb.contains(e.target)) return;
       e.preventDefault(); e.stopPropagation();
       var ts = touchesArr(e.targetTouches);
       if (ts.length === 1 && !g && aim) {
@@ -474,7 +492,7 @@
       }
     }
     function onMove(e) {
-      if (e.target === cbtn) return;
+      if (e.target === cbtn || vkb.contains(e.target)) return;
       e.preventDefault(); e.stopPropagation();
       if (!g) return;
       var ts = touchesArr(e.targetTouches);
@@ -519,7 +537,7 @@
       }
     }
     function onEnd(e) {
-      if (e.target === cbtn) return;
+      if (e.target === cbtn || vkb.contains(e.target)) return;
       e.preventDefault(); e.stopPropagation();
       if (!g) return;
       var ts = touchesArr(e.targetTouches);
@@ -660,13 +678,124 @@
       else key('Escape', 'Escape', 27);
       lastEsc = now;
     });
-    var kbd = $('kbd');
-    bind('b-kbd', function () {
-      if (document.activeElement === kbd) { kbd.blur(); return; }
-      kbd.value = ''; kbd.focus();
+    /* ---------------------------------------------------------------
+     * In-app keyboard (used in every orientation for consistency).
+     * Keys are sent to the game exactly like a hardware keyboard:
+     * keydown + keypress (the typed character) + keyup.
+     * ------------------------------------------------------------- */
+    var LAYOUTS = {
+      abc: [['q','w','e','r','t','y','u','i','o','p'], ['a','s','d','f','g','h','j','k','l'],
+            ['{shift}','z','x','c','v','b','n','m','{bksp}'], ['{123}','{left}','{space}','{right}','{enter}','{hide}']],
+      num: [['1','2','3','4','5','6','7','8','9','0'], ['-','/',':',';','(',')','&','@','"'],
+            ['{shift2}','.',',','?','!',"'",'#','%','{bksp}'], ['{abc}','{left}','{space}','{right}','{enter}','{hide}']],
+      sym: [['[',']','{','}','#','%','^','*','+','='], ['_','\\','|','~','<','>','$','€','£'],
+            ['{123b}','.',',','?','!',"'",'·','•','{bksp}'], ['{abc}','{left}','{space}','{right}','{enter}','{hide}']]
+    };
+    var LABEL = { '{shift}': '⇧', '{bksp}': '⌫', '{123}': '123', '{abc}': 'ABC', '{space}': 'space', '{enter}': 'done',
+                  '{hide}': '⌄', '{shift2}': '#+=', '{123b}': '123', '{left}': '◀', '{right}': '▶' };
+    var vkb = $('vkb'), vkLayout = 'abc', vkShift = false, vkOpen = false;
+    function charKeyCode(ch) {
+      var u = ch.toUpperCase();
+      if (/^[A-Z0-9]$/.test(u)) return u.charCodeAt(0);
+      return { ' ': 32, '-': 189, '/': 191, '.': 190, ',': 188, ';': 186, "'": 222, '=': 187, '[': 219, ']': 221, '\\': 220 }[ch] || 0;
+    }
+    function sendChar(ch) {
+      var kc = charKeyCode(ch), code = /^[a-z]$/i.test(ch) ? 'Key' + ch.toUpperCase() : (/^[0-9]$/.test(ch) ? 'Digit' + ch : (ch === ' ' ? 'Space' : ''));
+      function ev(type, extra) {
+        var e = new KeyboardEvent(type, { bubbles: true, cancelable: true, key: ch, code: code, keyCode: extra.keyCode, which: extra.keyCode, charCode: extra.charCode, shiftKey: ch !== ch.toLowerCase() });
+        try {
+          Object.defineProperty(e, 'keyCode', { get: function () { return extra.keyCode; } });
+          Object.defineProperty(e, 'which', { get: function () { return extra.keyCode || extra.charCode; } });
+          Object.defineProperty(e, 'charCode', { get: function () { return extra.charCode; } });
+        } catch (x) {}
+        window.dispatchEvent(e);
+      }
+      ev('keydown', { keyCode: kc, charCode: 0 });
+      ev('keypress', { keyCode: ch.charCodeAt(0), charCode: ch.charCodeAt(0) });
+      ev('keyup', { keyCode: kc, charCode: 0 });
+    }
+    function vkPress(k) {
+      switch (k) {
+        case '{shift}': vkShift = !vkShift; drawKeyboard(); return;
+        case '{123}': case '{123b}': vkLayout = 'num'; drawKeyboard(); return;
+        case '{shift2}': vkLayout = 'sym'; drawKeyboard(); return;
+        case '{abc}': vkLayout = 'abc'; drawKeyboard(); return;
+        case '{hide}': setKeyboard(false); return;
+        case '{bksp}': key('Backspace', 'Backspace', 8); return;
+        case '{left}': key('ArrowLeft', 'ArrowLeft', 37); return;
+        case '{right}': key('ArrowRight', 'ArrowRight', 39); return;
+        case '{enter}': key('Enter', 'Enter', 13); return;
+        case '{space}': sendChar(' '); return;
+      }
+      sendChar(vkShift ? k.toUpperCase() : k);
+      if (vkShift) { vkShift = false; drawKeyboard(); }
+    }
+    function drawKeyboard() {
+      vkb.innerHTML = '';
+      LAYOUTS[vkLayout].forEach(function (row) {
+        var r = document.createElement('div'); r.className = 'row';
+        row.forEach(function (k) {
+          var b = document.createElement('div');
+          b.className = 'k' + (k === '{space}' ? ' space' : k === '{enter}' ? ' enter' : k.charAt(0) === '{' ? ' wide' : '') + (k === '{shift}' && vkShift ? ' on' : '');
+          b.textContent = LABEL[k] || (vkShift && vkLayout === 'abc' ? k.toUpperCase() : k);
+          b.dataset.k = k;
+          r.appendChild(b);
+        });
+        vkb.appendChild(r);
+      });
+    }
+    /* press on pointerdown for speed; Backspace and arrows repeat while held */
+    var vkRepeat = null;
+    function stopRepeat() { clearTimeout(vkRepeat); clearInterval(vkRepeat); vkRepeat = null; }
+    vkb.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+    vkb.addEventListener('pointerdown', function (e) {
+      var b = e.target.closest && e.target.closest('.k'); if (!b) return;
+      e.preventDefault();
+      b.classList.add('down'); setTimeout(function () { b.classList.remove('down'); }, 110);
+      var k = b.dataset.k;
+      vkPress(k);
+      if (k === '{bksp}' || k === '{left}' || k === '{right}') {
+        stopRepeat();
+        vkRepeat = setTimeout(function () { vkRepeat = setInterval(function () { vkPress(k); }, 70); }, 400);
+      }
     });
-    kbd.addEventListener('input', function () { kbd.value = ''; });
-    kbd.addEventListener('keydown', function (e) { if (e.key === 'Enter') setTimeout(function () { kbd.blur(); }, 50); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { vkb.addEventListener(t, stopRepeat); });
+    /* The game tells us when a text box is being edited and where it is
+     * (game pixels): open the keyboard by itself, and slide the game up if the
+     * box would otherwise be hidden behind the keyboard. */
+    var vkAuto = false, editRect = null;
+    function placeGame() {
+      var shift = 0;
+      if (vkOpen && editRect) {
+        var kbh = parseInt(getComputedStyle(app).getPropertyValue('--kbh'), 10) || 0;
+        var visible = stage.clientHeight - kbh;
+        if (editRect.b + 10 > visible) shift = Math.min(editRect.b + 10 - visible, kbh);
+      }
+      canvas.style.top = shift ? (-shift) + 'px' : '';
+      if (aim && cur) setTimeout(function () { moveCursor(cur.x, cur.y); }, 30);
+    }
+    window.openttd_editbox = function (editing, l, t, r, b) {
+      if (editing) {
+        editRect = { l: l, t: t, r: r, b: b };
+        if (!vkOpen) { setKeyboard(true); vkAuto = true; }
+        placeGame();
+      } else {
+        editRect = null;
+        if (vkOpen && vkAuto) setKeyboard(false); else placeGame();
+      }
+    };
+    function setKeyboard(on) {
+      vkOpen = on; vkAuto = false;
+      $('b-kbd').classList.toggle('on', on);
+      if (on) {
+        var h = Math.round(Math.min(stage.clientHeight * 0.42, 210));
+        app.style.setProperty('--kbh', h + 'px');
+        vkLayout = 'abc'; vkShift = false; drawKeyboard();
+      }
+      app.classList.toggle('kbd-open', on);
+      placeGame();
+    }
+    bind('b-kbd', function () { setKeyboard(!vkOpen); });
 
     /* ---------------------------------------------------------------
      * Menu: help, fullscreen, save import / export

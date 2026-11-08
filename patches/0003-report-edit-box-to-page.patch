@@ -1,0 +1,51 @@
+diff --git a/src/video/sdl2_v.cpp b/src/video/sdl2_v.cpp
+index e31afce..21322e5 100644
+--- a/src/video/sdl2_v.cpp
++++ b/src/video/sdl2_v.cpp
+@@ -20,6 +20,9 @@
+ #include "../framerate_type.h"
+ #include "../window_func.h"
+ #include "sdl2_v.h"
++#ifdef __EMSCRIPTEN__
++#include "../window_gui.h"
++#endif
+ #include <SDL.h>
+ #ifdef __EMSCRIPTEN__
+ #	include <emscripten.h>
+@@ -630,8 +633,36 @@ void VideoDriver_SDL_Base::InputLoop()
+ 	if (old_ctrl_pressed != _ctrl_pressed) HandleCtrlChanged();
+ }
+ 
++#ifdef __EMSCRIPTEN__
++/**
++ * Web build: tell the page whether a text box is being edited and where it is on
++ * screen, so it can show its own on-screen keyboard and keep the box visible above it.
++ * Only calls into JavaScript when something changed.
++ */
++static void ReportEditBoxToPage(bool editing)
++{
++	static int last[5] = {-1, -1, -1, -1, -1};
++	int now[5] = {0, 0, 0, 0, 0};
++	if (editing && _focused_window != nullptr && _focused_window->nested_focus != nullptr &&
++			_focused_window->nested_focus->type == WWT_EDITBOX) {
++		const NWidgetCore *nw = _focused_window->nested_focus;
++		now[0] = 1;
++		now[1] = _focused_window->left + nw->pos_x;
++		now[2] = _focused_window->top + nw->pos_y;
++		now[3] = now[1] + (int)nw->current_x;
++		now[4] = now[2] + (int)nw->current_y;
++	}
++	if (std::equal(std::begin(now), std::end(now), std::begin(last))) return;
++	std::copy(std::begin(now), std::end(now), std::begin(last));
++	EM_ASM({ if (window["openttd_editbox"]) openttd_editbox($0, $1, $2, $3, $4); }, now[0], now[1], now[2], now[3], now[4]);
++}
++#endif
++
+ void VideoDriver_SDL_Base::LoopOnce()
+ {
++#ifdef __EMSCRIPTEN__
++	ReportEditBoxToPage(this->edit_box_focused);
++#endif
+ 	if (_exit_game) {
+ #ifdef __EMSCRIPTEN__
+ 		/* Emscripten is event-driven, and as such the main loop is inside
