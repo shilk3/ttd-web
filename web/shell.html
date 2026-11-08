@@ -362,14 +362,30 @@
       var w = canvas.offsetWidth, h = canvas.offsetHeight, l = stage.offsetLeft, t = canvas.offsetTop;
       return { left: l, top: t, right: l + w, bottom: t + h, x: l, y: t, width: w, height: h };
     };
+    /* The space the page really has. iPhone Home Screen apps can report a
+     * window size that includes the status bar, which pushed the side bar off
+     * the screen; so measure a fixed full-screen probe as well and take the
+     * smallest answer. */
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;visibility:hidden;pointer-events:none;z-index:-1';
+    document.body.appendChild(probe);
+    var vpW = 0, vpH = 0;
+    function measure() {
+      var de = document.documentElement, vv = window.visualViewport;
+      var ws = [window.innerWidth, de.clientWidth, probe.offsetWidth], hs = [window.innerHeight, de.clientHeight, probe.offsetHeight];
+      if (vv && vv.scale === 1) { ws.push(Math.round(vv.width)); hs.push(Math.round(vv.height)); }
+      vpW = Math.min.apply(null, ws.filter(function (v) { return v > 0; }));
+      vpH = Math.min.apply(null, hs.filter(function (v) { return v > 0; }));
+    }
     /* screen (client) point → point in #app's own, unrotated coordinates */
     function toApp(x, y) {
-      if (rot === 1) return { x: y, y: window.innerWidth - x };
-      if (rot === -1) return { x: window.innerHeight - y, y: x };
+      if (rot === 1) return { x: y, y: vpW - x };
+      if (rot === -1) return { x: vpH - y, y: x };
       return { x: x, y: y };
     }
     function applyRotation() {
-      var W = window.innerWidth, H = window.innerHeight;
+      measure();
+      var W = vpW, H = vpH;
       var want = (H > W && W < 700) ? (flip ? -1 : 1) : 0;
       if (want !== rot) {
         rot = want;
@@ -385,6 +401,13 @@
       }
     }
     applyRotation();
+    /* iPhone may settle on its final size a moment after launch without a
+     * resize event: re-check for the first few seconds. */
+    var settleChecks = 0, settle = setInterval(function () {
+      var w = vpW, h = vpH; measure();
+      if (w !== vpW || h !== vpH) relayout();
+      if (++settleChecks >= 10) clearInterval(settle);
+    }, 500);
     function relayout() {
       applyRotation();
       /* SDL re-reads the canvas size on window resize */
