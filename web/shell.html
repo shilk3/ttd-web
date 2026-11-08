@@ -49,11 +49,11 @@
       position: relative; z-index: 6; /* always above the game canvas */
       width: var(--gutter); flex: none; height: 100%;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      gap: 7px; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;
+      gap: 5px; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;
       background: #111;
     }
     #controls button {
-      width: 38px; height: 38px; border-radius: 8px;
+      width: 36px; height: 36px; border-radius: 8px;
       background: var(--btn-bg); color: var(--btn-fg);
       border: 1px solid var(--btn-border);
       font-size: 18px; line-height: 1; padding: 0;
@@ -194,6 +194,7 @@
     <div id="controls">
       <button id="b-zin" aria-label="Zoom in"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M10 7v6M7 10h6M15 15l5 5"/></svg></button>
       <button id="b-zout" aria-label="Zoom out"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M7 10h6M15 15l5 5"/></svg></button>
+      <button id="b-see" aria-label="See-through trees and buildings"><svg viewBox="0 0 24 24"><path d="M12 3l6 9h-3l4 6H5l4-6H6z" stroke-dasharray="2.5 2"/><path d="M12 18v3"/></svg></button>
       <button id="b-aim" aria-label="Aim mode (trackpad cursor + click button)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
       <button id="b-rmb" aria-label="Next tap is a right-click"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v7"/><path d="M12 3a6 6 0 0 1 6 6v1h-6z" fill="currentColor"/></svg></button>
       <button id="b-undo" aria-label="Back (undo last action)" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
@@ -226,7 +227,7 @@
           <li><b>Tap</b>&nbsp;= click.&nbsp;<b>Drag</b>&nbsp;= scroll the map, or drag-build when a tool is selected.</li>
           <li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li>
           <li><b>Long-press</b>&nbsp;= right-click (shows tooltips, closes dropdowns).</li>
-          <li>Side buttons: zoom in/out, “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li>
+          <li>Side buttons: zoom in/out, see-through trees &amp; buildings (dashed tree), “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li>
           <li><b>Rotation lock on?</b>&nbsp;No need to unlock it: hold the phone sideways and the game turns itself. If it is upside down, use&nbsp;<b>Flip upside down</b>&nbsp;above.</li>
         <li>If the interface is too small or big: OpenTTD menu →&nbsp;<i>Game Options → Graphics → Interface size</i>.</li>
         </ul>
@@ -749,13 +750,23 @@
     bind('b-zin', function () { var c = center(); wheel(c.x, c.y, -100); });
     bind('b-zout', function () { var c = center(); wheel(c.x, c.y, 100); });
     bind('b-rmb', function () { setRightNext(!rightNext); if (rightNext) toast(aim ? 'Next CLICK press is a right-click' : 'Next tap is a right-click'); });
+    /* See-through: trees, town buildings and industries in one tap. */
+    function showSeeThrough() {
+      if (Module._em_openttd_see_through_state) $('b-see').classList.toggle('on', Module._em_openttd_see_through_state() === 1);
+    }
+    bind('b-see', function () {
+      if (!Module._em_openttd_toggle_see_through) return;
+      var on = Module._em_openttd_toggle_see_through() === 1;
+      $('b-see').classList.toggle('on', on);
+      toast(on ? 'Trees and buildings see-through' : 'Trees and buildings solid', 1500);
+    });
     bind('b-aim', function () { setAim(!aim); toast(aim ? 'Aim mode on: slide to move the cursor, press CLICK to click' : 'Aim mode off'); });
     bind('m-tapjump', function () { setTapJump(!tapJump); });
     bind('m-btnside', function () { setBtnSide(!btnRight); });
     setTapJump(tapJump); setBtnSide(btnRight);
     /* restore aim mode once the game is running */
     var aimWait = setInterval(function () {
-      if (typeof FS !== 'undefined' && $('loader').style.display === 'none') { clearInterval(aimWait); setAim(aim); }
+      if (typeof FS !== 'undefined' && $('loader').style.display === 'none') { clearInterval(aimWait); setAim(aim); showSeeThrough(); }
     }, 500);
     var lastEsc = 0;
     bind('b-esc', function () {

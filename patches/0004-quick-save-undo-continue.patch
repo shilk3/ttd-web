@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2891bee..6dc8aad 100644
+index 2891bee..23920c1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -366,7 +366,7 @@ if(EMSCRIPTEN)
@@ -7,7 +7,7 @@ index 2891bee..6dc8aad 100644
  
      # Export functions to Javascript.
 -    target_link_libraries(WASM::WASM INTERFACE "-s EXPORTED_FUNCTIONS='[\"_main\", \"_em_openttd_add_server\"]' -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]'")
-+    target_link_libraries(WASM::WASM INTERFACE "-s EXPORTED_FUNCTIONS='[\"_main\", \"_em_openttd_add_server\", \"_em_openttd_quicksave\", \"_em_openttd_undo\", \"_em_openttd_undo_count\", \"_em_openttd_load_game\"]' -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]'")
++    target_link_libraries(WASM::WASM INTERFACE "-s EXPORTED_FUNCTIONS='[\"_main\", \"_em_openttd_add_server\", \"_em_openttd_quicksave\", \"_em_openttd_undo\", \"_em_openttd_undo_count\", \"_em_openttd_load_game\", \"_em_openttd_toggle_see_through\", \"_em_openttd_see_through_state\"]' -s EXPORTED_RUNTIME_METHODS='[\"cwrap\"]'")
  
      # Preload all the files we generate during build.
      # As we do not compile with FreeType / FontConfig, we also have no way to
@@ -49,22 +49,23 @@ index ce4a948..7da3d57 100644
  	int y = TileY(tile) * TILE_SIZE;
  
 diff --git a/src/openttd.cpp b/src/openttd.cpp
-index 7d585b0..eb1598f 100644
+index 7d585b0..419f7a7 100644
 --- a/src/openttd.cpp
 +++ b/src/openttd.cpp
-@@ -93,6 +93,11 @@
+@@ -93,6 +93,12 @@
  #	include <emscripten/html5.h>
  #endif
  
 +#ifdef __EMSCRIPTEN__
 +#	include <deque>
 +#	include <emscripten.h>
++#	include "transparency.h"
 +#endif
 +
  #include "safeguards.h"
  
  void CallLandscapeTick();
-@@ -1015,8 +1020,139 @@ static void UpdateSocialIntegration(GameMode game_mode)
+@@ -1015,8 +1021,161 @@ static void UpdateSocialIntegration(GameMode game_mode)
  	}
  }
  
@@ -176,6 +177,28 @@ index 7d585b0..eb1598f 100644
 +	return (int)_web_undo_stack.size();
 +}
 +
++/** Trees, town buildings and industries that "see-through" toggles together. */
++static constexpr TransparencyOption WEB_SEE_THROUGH[] = { TO_TREES, TO_HOUSES, TO_INDUSTRIES };
++
++/** Is the see-through view on (any of its parts)? */
++int CDECL em_openttd_see_through_state()
++{
++	for (TransparencyOption to : WEB_SEE_THROUGH) if (HasBit(_transparency_opt, to)) return 1;
++	return 0;
++}
++
++/** Toggle trees and buildings see-through in one go. @return 1 when now see-through. */
++int CDECL em_openttd_toggle_see_through()
++{
++	bool on = em_openttd_see_through_state() == 0;
++	for (TransparencyOption to : WEB_SEE_THROUGH) {
++		if (on) SetBit(_transparency_opt, to); else ClrBit(_transparency_opt, to);
++	}
++	MarkWholeScreenDirty();
++	InvalidateWindowClassesData(WC_TRANSPARENCY_TOOLBAR); // keep the game's own transparency bar in step
++	return on ? 1 : 0;
++}
++
 +/** How many actions can be undone. */
 +int CDECL em_openttd_undo_count()
 +{
@@ -204,7 +227,7 @@ index 7d585b0..eb1598f 100644
  	/* If we are saving something, the network stays in its current state */
  	if (new_mode != SM_SAVE_GAME) {
  		/* If the network is active, make it not-active */
-@@ -1100,7 +1236,11 @@ void SwitchToMode(SwitchMode new_mode)
+@@ -1100,7 +1259,11 @@ void SwitchToMode(SwitchMode new_mode)
  			ResetGRFConfig(true);
  			ResetWindowSystem();
  

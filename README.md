@@ -19,6 +19,7 @@ offline mode and "Add to Home Screen".
   a round CLICK button for the other thumb clicks (tap) or holds the button down (hold, for
   drag-building). Slide off the button before releasing to cancel. Options in the menu: tap on the
   map jumps the cursor there; CLICK button in the bottom-left or bottom-right corner.
+- **See-through button** (dashed tree): trees, town buildings and industries see-through in one tap.
 - **Side button bar** in the notch area: zoom in/out, "next tap is a right-click",
   Esc (cancel tool; double-tap = close top window), on-screen keyboard, menu.
 - **Works with rotation lock on**: when the phone reports portrait, the app turns itself 90° so you can
