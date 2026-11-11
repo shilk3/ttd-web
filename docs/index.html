@@ -1,1 +1,1077 @@
-<!doctypehtml><html lang=en><head><meta charset=utf-8><meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"name=viewport><meta content=yes name=apple-mobile-web-app-capable><meta content=yes name=mobile-web-app-capable><meta content=black name=apple-mobile-web-app-status-bar-style><meta content=OpenTTD name=apple-mobile-web-app-title><meta content=#000000 name=theme-color><link href=manifest.webmanifest rel=manifest><link href=icon-180.png rel=apple-touch-icon><link href=icon-192.png rel=icon><title>OpenTTD</title><style>:root{--gutter:max(46px, env(safe-area-inset-right));--pad-left:env(safe-area-inset-left);--btn-bg:#3b3b3b;--btn-border:#6c6c6c;--btn-fg:#f0f0f0;--accent:#c8a040}body,html{margin:0;padding:0;height:100%;width:100%;background:#000;color:#eee;overflow:hidden;font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:none}#app{position:fixed;inset:0;box-sizing:border-box;display:flex;flex-direction:row;padding-left:var(--pad-left)}#stage{position:relative;flex:1;min-width:0;height:100%}canvas.emscripten{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;outline:0;image-rendering:pixelated;image-rendering:crisp-edges;cursor:none;touch-action:none}#controls{position:relative;z-index:6;width:var(--gutter);flex:none;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box;background:#111}#controls button{width:36px;height:36px;border-radius:8px;background:var(--btn-bg);color:var(--btn-fg);border:1px solid var(--btn-border);font-size:18px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;touch-action:manipulation}#app.rot #controls{padding-bottom:0}#controls button:disabled{opacity:.35}#controls button.on{background:var(--accent);color:#111;border-color:#f0d080}#controls button:active{filter:brightness(1.3)}#controls svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}#vkb{position:absolute;left:0;right:0;bottom:0;height:var(--kbh,0);display:none;flex-direction:column;gap:5px;padding:6px 4px;box-sizing:border-box;background:#1c1c1e;z-index:7;touch-action:none;-webkit-user-select:none;user-select:none}.kbd-open #vkb{display:flex}.kbd-open #clickbtn{bottom:calc(var(--kbh) + 10px)}#vkb .row{flex:1;display:flex;gap:5px;justify-content:center;min-height:0}#vkb .k{flex:1 1 0;max-width:64px;border-radius:6px;background:#4a4a4e;color:#f2f2f2;display:flex;align-items:center;justify-content:center;font:500 17px/1 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 1px 0 #000}#vkb .k.wide{flex-grow:1.5;max-width:96px;background:#2f2f33;font-size:14px}#vkb .k.space{flex-grow:5;max-width:none}#vkb .k.enter{flex-grow:1.8;max-width:110px;background:var(--accent);color:#111}#vkb .k.on{background:#e8e8e8;color:#111}#vkb .k.down{filter:brightness(1.6);transform:translateY(1px)}#loader{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:#1c2a14 radial-gradient(circle at 50% 40%,#3b5226 0,#1c2a14 70%)}#box{min-width:260px;max-width:80%;border:1px solid #a8a8a8;outline:1px solid #626262}#title{background:#838383;color:#fff;padding:2px 8px;text-shadow:1px 1px #101010}#message{background:silver;color:#101010;padding:8px;min-height:20px}#box.error #message,#box.error #title{background:#b00000;color:#fcf880}#bar{height:6px;background:#555;margin-top:8px}#bar>div{height:100%;width:0;background:var(--accent);transition:width .2s}#app.rot{right:auto;bottom:auto;transform-origin:0 0}#app.rot.cw{transform:translateX(var(--vw)) rotate(90deg);padding-left:env(safe-area-inset-top);--gutter:max(46px, env(safe-area-inset-bottom))}#app.rot.ccw{transform:translateY(var(--vh)) rotate(-90deg);padding-left:env(safe-area-inset-bottom);--gutter:max(46px, env(safe-area-inset-top))}#app.rot #sheet,#app.rot #toast{position:absolute}#sheet{box-sizing:border-box;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}#app.rot.cw #sheet{padding:8px var(--gutter) 8px max(8px,env(safe-area-inset-top))}#app.rot.ccw #sheet{padding:8px max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom))}#aimring{position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border:2px solid rgba(255,220,120,.9);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 0 0 1px rgba(0,0,0,.6);pointer-events:none;display:none;z-index:3}#clickbtn{position:absolute;bottom:10px;left:10px;z-index:4;width:64px;height:64px;border-radius:50%;background:rgba(200,160,64,.55);border:2px solid rgba(255,230,160,.8);color:#111;font:600 12px/1 -apple-system,sans-serif;display:none;align-items:center;justify-content:center;touch-action:none;-webkit-user-select:none;user-select:none}#clickbtn.right-side{left:auto;right:10px}#clickbtn.down{background:rgba(240,200,90,.9);transform:scale(.94)}#clickbtn.rmb{background:rgba(120,170,230,.7);border-color:rgba(200,225,255,.9)}#clickbtn.cancel{background:rgba(200,50,40,.85);border-color:#fcc;color:#fff}.aim #aimring,.aim #clickbtn{display:flex}.aim #aimring{display:block}#panel .toggle{min-width:52px}#panel .toggle.on{background:var(--accent);color:#111;border-color:#f0d080}#sheet{display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.6);align-items:center;justify-content:center}#sheet.open{display:flex}#panel{background:#2b2b2b;border:1px solid #6c6c6c;border-radius:10px;width:min(560px,100%);max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px;box-sizing:border-box;touch-action:pan-x pan-y;-webkit-user-select:text;user-select:text}#panel h2{margin:0 0 8px;font-size:17px;color:var(--accent)}#panel h3{margin:14px 0 4px;font-size:14px}#panel li,#panel p{color:#ccc;font-size:13px;margin:4px 0}#panel ul{padding-left:18px;margin:4px 0}#panel .row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}#panel button{background:var(--btn-bg);color:var(--btn-fg);border:1px solid var(--btn-border);border-radius:8px;padding:8px 12px;font-size:14px}#panel button.primary{background:var(--accent);color:#111;border-color:#f0d080}#panel .disclaimer{background:#4a3a10;border:1px solid var(--accent);border-radius:6px;padding:6px 8px;color:#f3e2b0}#status{color:#9fd08f;font-size:13px;min-height:18px}#toast{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:40;background:rgba(30,30,30,.92);border:1px solid #6c6c6c;border-radius:8px;padding:6px 12px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none}#toast.show{opacity:1}</style></head><body><div id=app><div id=stage><canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas><div id=aimring></div><div id=clickbtn>CLICK</div><div id=vkb></div><div id=loader><div id=box><div id=title>Loading …</div><div id=message>Preparing game …<div id=bar><div></div></div></div></div></div></div><div id=controls><button id=b-zin aria-label="Zoom in"><svg viewBox="0 0 24 24"><circle cx=10 cy=10 r=6 /><path d="M10 7v6M7 10h6M15 15l5 5"/></svg></button><button id=b-zout aria-label="Zoom out"><svg viewBox="0 0 24 24"><circle cx=10 cy=10 r=6 /><path d="M7 10h6M15 15l5 5"/></svg></button><button id=b-see aria-label="See-through trees and buildings"><svg viewBox="0 0 24 24"><path d="M12 3l6 9h-3l4 6H5l4-6H6z"stroke-dasharray="2.5 2"/><path d="M12 18v3"/></svg></button><button id=b-aim aria-label="Aim mode (trackpad cursor + click button)"><svg viewBox="0 0 24 24"><circle cx=12 cy=12 r=7 /><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button><button id=b-rmb aria-label="Next tap is a right-click"><svg viewBox="0 0 24 24"><rect height=18 rx=6 width=12 x=6 y=3 /><path d="M12 3v7"/><path d="M12 3a6 6 0 0 1 6 6v1h-6z"fill=currentColor /></svg></button><button id=b-undo aria-label="Back (undo last action)"disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button id=b-esc aria-label="Close windows / cancel tool"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><button id=b-kbd aria-label=Keyboard><svg viewBox="0 0 24 24"><rect height=12 rx=2 width=20 x=2 y=6 /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button><button id=b-menu aria-label=Menu><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div><div id=sheet><div id=panel><h2>OpenTTD for phone</h2><p class=disclaimer><b>Please note:</b> this app is intended for people who own a copy of Transport Tycoon Deluxe. If you don’t own the original game, please buy it before using this app.</p><div class=row><button id=m-close class=primary>Back to game</button><button id=m-fs>Fullscreen</button><button id=m-flip>Flip upside down</button><button id=m-update class=primary style=display:none>Reload to update</button></div><h3>Aim mode</h3><p>Turn on with the <b>crosshair</b> button. One finger slides the cursor like a laptop trackpad (it never clicks by itself); the round <b>CLICK</b> button does the clicking: tap = click, hold = mouse button held down (slide your other finger to drag-build, release to finish). To cancel a hold, slide your thumb off the button before letting go (this also drops the selected build tool). For a right-click, press the right-click side button first. Two fingers still scroll and zoom.</p><div class=row><button id=m-tapjump class=toggle>Off</button><span style=align-self:center;color:#ccc>Tap on the map moves the cursor there</span></div><div class=row><button id=m-btnside class=toggle>Left</button><span style=align-self:center;color:#ccc>CLICK button corner</span></div><h3>Touch controls</h3><ul><li><b>Tap</b> = click. <b>Drag</b> = scroll the map, or drag-build when a tool is selected.</li><li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li><li><b>Long-press</b> = right-click (shows tooltips, closes dropdowns).</li><li>Side buttons: zoom in/out, see-through trees & buildings (dashed tree), “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li><li><b>Rotation lock on?</b> No need to unlock it: hold the phone sideways and the game turns itself. If it is upside down, use <b>Flip upside down</b> above.</li><li>If the interface is too small or big: OpenTTD menu → <i>Game Options → Graphics → Interface size</i>.</li></ul><h3>Saves</h3><p>Your game is saved automatically every minute and the moment you leave the app, so closing it in a hurry loses little or nothing.<b>Continue</b>at the top of the main menu picks up your most recent game.</p><p>The<b>Back</b>side button (curved arrow) undoes your last action, up to 5 steps. It reloads the game from just before that action, so open windows close and the clock jumps back a few seconds.</p><p>Games are saved inside this browser on this device. Export them now and then as a backup.</p><div class=row><button id=m-export>Export saves</button><button id=m-import>Import files…</button></div><div id=status></div><h3>Using your own original Transport Tycoon Deluxe graphics & sounds</h3><p>This app ships with the free OpenGFX graphics and OpenSFX sounds. If you own TTD on a computer, you can use its original files instead:</p><ul><li>Find these files in your TTD install folder: <code>TRG1R.GRF, TRGCR.GRF, TRGHR.GRF, TRGIR.GRF, TRGTR.GRF</code> (Windows version) or <code>TRG1.GRF, TRGC.GRF, TRGH.GRF, TRGI.GRF, TRGT.GRF</code> (DOS version), plus <code>SAMPLE.CAT</code> for sounds.</li><li>Put them on your phone (e.g. iCloud Drive / Files), tap <b>Import files…</b> and select them all.</li><li>Reload, then in OpenTTD choose <i>Game Options → Graphics → Base graphics set → Original</i> (and the same for base sounds).</li></ul><p>Your original TTD <code>.SV1</code> save games can be imported the same way and loaded from <i>Load Game</i>.</p><h3>Install</h3><p>On iPhone: Safari → Share → <b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p><p style=color:#888 id=m-version></p><p style=color:#888>OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p><input id=m-file multiple style=display:none type=file></div></div><div id=toast></div></div><script>!function(){"use strict";var e=document.getElementById("canvas"),t=document.getElementById("stage"),n="/home/web_user/.openttd";function o(e){return document.getElementById(e)}function i(e,t){var n=o("toast");n.textContent=e,n.classList.add("show"),clearTimeout(i._t),i._t=setTimeout((function(){n.classList.remove("show")}),t||2500)}function a(e,t,n){o("loader").style.display="flex",o("title").textContent=e,void 0!==t&&(o("message").innerHTML=t),o("box").className=n?"error":""}var r=window.Module={preRun:[],postRun:[],arguments:[],totalDependencies:0,print:function(e){console.log(e)},printErr:function(e){console.warn(e)},canvas:e,setStatus:function(e){var t=e&&e.match(/\((\d+(?:\.\d+)?)\/(\d+)\)/),n=document.querySelector("#bar > div");t&&n&&(n.style.width=Math.round(100*t[1]/t[2])+"%"),e||(o("loader").style.display="none")},monitorRunDependencies:function(e){this.totalDependencies=Math.max(this.totalDependencies,e),0===e&&(o("loader").style.display="none")},onFsReady:function(){!function(){try{var e=n+"/openttd.cfg";try{return FS.stat(e),void function(e){var t=!1;try{t="1"===localStorage.getItem("ttd-autosave-1min")}catch(e){}if(t)return;var n=FS.readFile(e,{encoding:"utf8"});n=n.replace(/^autosave\s*=.*$/m,"").replace(/^autosave_interval\s*=.*$/m,""),/^\[gui\]\s*$/m.test(n)?n=n.replace(/^\[gui\]\s*$/m,"[gui]\nautosave_interval = 1"):n+="\n[gui]\nautosave_interval = 1\n";FS.writeFile(e,n);try{localStorage.setItem("ttd-autosave-1min","1")}catch(e){}}(e)}catch(e){}var t=Math.min(window.innerWidth,window.innerHeight)>=700?150:100;FS.writeFile(e,["[misc]","gui_scale = "+t,"","[gui]","; 3 = drag the map with one finger (left button)","scroll_mode = 3","; autosave every minute, so little is lost if the app is closed in a hurry","autosave_interval = 1","show_finances = true","hover_delay_ms = 0","","[network]","participate_survey = no",""].join("\n"))}catch(e){console.warn("config",e)}}()},onBootstrap:function(e,t){a("Missing base graphics","Downloading base graphics … "+e+" / "+t+" bytes")},onBootstrapFailed:function(){a("Missing base graphics","Could not download base graphics. Check your connection and reload.",!0)},onBootstrapReload:function(){a("Base graphics ready","Reloading …")},onExit:function(){a("Thanks for playing!","Tap to start again."),o("loader").onclick=function(){location.reload()}},onAbort:function(){a("Crash :(","The game crashed. Tap to reload — your saves are kept.",!0),o("loader").onclick=function(){location.reload()}},onWarningFs:function(){}};window.onerror=function(){r.onAbort()};var c=document.getElementById("app"),s=0,d=!1;try{d="1"===localStorage.getItem("ttd-flip")}catch(e){}var u=Element.prototype.getBoundingClientRect;e.getBoundingClientRect=function(){if(!s)return u.call(e);var n=e.offsetWidth,o=e.offsetHeight,i=t.offsetLeft,a=e.offsetTop;return{left:i,top:a,right:i+n,bottom:a+o,x:i,y:a,width:n,height:o}};var l=document.createElement("div");l.style.cssText="position:fixed;left:0;top:0;right:0;bottom:0;visibility:hidden;pointer-events:none;z-index:-1",document.body.appendChild(l);var f=0,h=0;function p(){var e=document.documentElement,t=window.visualViewport,n=[window.innerWidth,e.clientWidth,l.offsetWidth],o=[window.innerHeight,e.clientHeight,l.offsetHeight];t&&1===t.scale&&(n.push(Math.round(t.width)),o.push(Math.round(t.height))),f=Math.min.apply(null,n.filter((function(e){return e>0}))),h=Math.min.apply(null,o.filter((function(e){return e>0})))}function m(e,t){return 1===s?{x:t,y:f-e}:-1===s?{x:h-t,y:e}:{x:e,y:t}}function v(){p();var e=f,t=h,n=t>e&&e<700?d?-1:1:0;n!==s&&(s=n,c.classList.toggle("rot",!!s),c.classList.toggle("cw",1===s),c.classList.toggle("ccw",-1===s)),s?(c.style.width=t+"px",c.style.height=e+"px",c.style.setProperty("--vw",e+"px"),c.style.setProperty("--vh",t+"px")):c.style.width=c.style.height=""}v();var g=0,y=setInterval((function(){var e=f,t=h;p(),e===f&&t===h||w(),++g>=10&&clearInterval(y)}),500);function w(){v(),window.dispatchEvent(new Event("resize"))}window.addEventListener("resize",(function(e){e.isTrusted&&setTimeout(w,50)})),window.addEventListener("orientationchange",(function(){setTimeout(w,300)}));var b=!1;function x(t,n,o,i,a){var r=new MouseEvent(t,{bubbles:!0,cancelable:!0,view:window,clientX:n,clientY:o,screenX:n,screenY:o,button:i||0,buttons:a||0});e.dispatchEvent(r)}function E(t,n,o){e.dispatchEvent(new WheelEvent("wheel",{bubbles:!0,cancelable:!0,view:window,clientX:t,clientY:n,deltaY:o,deltaMode:0}))}function L(e,t,n){var o={bubbles:!0,cancelable:!0,code:e,key:t,keyCode:n,which:n},i=new KeyboardEvent("keydown",o),a=new KeyboardEvent("keyup",o);[i,a].forEach((function(e){try{Object.defineProperty(e,"keyCode",{get:function(){return n}}),Object.defineProperty(e,"which",{get:function(){return n}})}catch(e){}})),window.dispatchEvent(i),setTimeout((function(){window.dispatchEvent(a)}),30)}var k=null;function C(e){return m(e.clientX,e.clientY)}function _(e){for(var t=[],n=0;n<e.length;n++)t.push(e[n]);return t}function T(e,t){return m((e.clientX+t.clientX)/2,(e.clientY+t.clientY)/2)}function F(e,t){return Math.hypot(e.clientX-t.clientX,e.clientY-t.clientY)}function S(e,t){var n,o;k&&(clearTimeout(k.timer),"pending"!==k.mode||t?"drag"===k.mode?x("mouseup",e.x,e.y,0,0):"hold"===k.mode&&x("mouseup",k.start.x,k.start.y,2,0):b?(n=e.x,o=e.y,x("mousemove",n,o,0,0),x("mousedown",n,o,2,2),setTimeout((function(){x("mouseup",n,o,2,0)}),40),ne(!1)):function(e,t){x("mousemove",e,t,0,0),x("mousedown",e,t,0,1),setTimeout((function(){x("mouseup",e,t,0,0)}),40)}(e.x,e.y))}function I(e){if(e.target!==U&&!se.contains(e.target)){e.preventDefault(),e.stopPropagation();var t=_(e.targetTouches);if(1===t.length&&!k&&A){var n=C(t[0]);k={mode:"aim",id:t[0].identifier,start:n,last:n,t0:Date.now(),moved:!1}}else if(1!==t.length||k){if(t.length>=2){if(k&&"two"!==k.mode&&S(k.last,!0),k&&"two"===k.mode)return;var o=t[0],i=t[1],a=T(o,i);k={mode:"two",m:a,d0:F(o,i),panning:!1,start:a}}}else{var r=C(t[0]);x("mousemove",r.x,r.y,0,0),(k={mode:"pending",id:t[0].identifier,start:r,last:r}).timer=setTimeout((function(){k&&"pending"===k.mode&&(k.mode="hold",x("mousedown",k.start.x,k.start.y,2,2),navigator.vibrate&&navigator.vibrate(15))}),450)}}}function M(e){if(e.target!==U&&!se.contains(e.target)&&(e.preventDefault(),e.stopPropagation(),k)){var t=_(e.targetTouches);if("aim"===k.mode){var n=t.filter((function(e){return e.identifier===k.id}))[0];if(!n)return;var o=C(n);if(!k.moved&&Math.hypot(o.x-k.start.x,o.y-k.start.y)<4)return;k.moved=!0;var i=o.x-k.last.x,a=o.y-k.last.y,r=Math.hypot(i,a),c=1+Math.min(1.5,Math.max(0,(r-6)/10));X($.x+i*c,$.y+a*c),k.last=o}else if("pending"===k.mode||"drag"===k.mode){var s=t.filter((function(e){return e.identifier===k.id}))[0];if(!s)return;var d=C(s);if("pending"===k.mode){if(Math.hypot(d.x-k.start.x,d.y-k.start.y)<9)return;clearTimeout(k.timer),b&&ne(!1),k.mode="drag",x("mousedown",k.start.x,k.start.y,0,1)}k.last=d,x("mousemove",d.x,d.y,0,1)}else if("two"===k.mode&&t.length>=2){var u=T(t[0],t[1]),l=F(t[0],t[1]),f=l/k.d0;f>1.22?(E(u.x,u.y,-100),k.d0=l,k.zoomed=!0):f<1/1.22&&(E(u.x,u.y,100),k.d0=l,k.zoomed=!0),!k.panning&&Math.hypot(u.x-k.start.x,u.y-k.start.y)>9&&(k.panning=!0,x("mousemove",k.m.x,k.m.y,0,0),x("mousedown",k.m.x,k.m.y,2,2)),k.panning&&x("mousemove",u.x,u.y,0,2),k.m=u}}}function D(e){if(e.target!==U&&!se.contains(e.target)&&(e.preventDefault(),e.stopPropagation(),k)){var t=_(e.targetTouches);if("two"!==k.mode){if("aim"!==k.mode)if("done"!==k.mode){if(0===t.length){var n=_(e.changedTouches).filter((function(e){return e.identifier===k.id}))[0];S(n?C(n):k.last,"touchcancel"===e.type),k=null}}else 0===t.length&&(k=null);else if(0===t.length){var o=_(e.changedTouches).filter((function(e){return e.identifier===k.id}))[0];if(j&&!k.moved&&Date.now()-k.t0<400&&o&&"touchcancel"!==e.type){var i=C(o);X(i.x,i.y)}k=null}}else t.length<2&&(k&&"two"===k.mode&&k.panning&&x("mouseup",k.m.x,k.m.y,2,0),k=t.length?{mode:"done"}:null,A&&setTimeout((function(){X($.x,$.y)}),30))}}function R(e,t){try{var n=localStorage.getItem(e);return null===n?t:"1"===n}catch(e){return t}}function B(e,t){try{localStorage.setItem(e,t?"1":"0")}catch(e){}}var A=R("ttd-aim",!1),j=R("ttd-tapjump",!0),P=R("ttd-btnright",!1),$=null,H=0,O=document.getElementById("aimring"),U=document.getElementById("clickbtn");function Y(){return e.getBoundingClientRect()}function X(e,n){var o=Y();x("mousemove",($={x:Math.max(o.left,Math.min(o.left+o.width-1,e)),y:Math.max(o.top,Math.min(o.top+o.height-1,n))}).x,$.y,0,2===H?2:1===H?1:0),O.style.transform="translate("+($.x-t.offsetLeft)+"px,"+($.y-t.offsetTop)+"px)"}function z(e){if(A=e,B("ttd-aim",e),document.getElementById("app").classList.toggle("aim",e),o("b-aim").classList.toggle("on",e),e){if(!$){var t=Y();$={x:t.left+t.width/2,y:t.top+t.height/2}}X($.x,$.y)}}var W=null;function K(e){W&&N(!0),$&&(W={id:e,out:!1},H=b?2:1,b&&ne(!1),U.classList.add("down"),x("mousemove",$.x,$.y,0,0),x("mousedown",$.x,$.y,2===H?2:0,2===H?2:1))}function q(e,t){W&&(W.out=!function(e,t,n){var o=e.getBoundingClientRect();return t>=o.left&&t<=o.right&&n>=o.top&&n<=o.bottom}(U,e,t),U.classList.toggle("cancel",W.out),U.textContent=W.out?"CANCEL":2===H?"RIGHT":"CLICK")}function N(e){if(W){var t=H;e=e||W.out,W=null,H=0,U.classList.remove("down","cancel"),J();var n=function(){x("mouseup",$.x,$.y,2===t?2:0,0)};e&&1===t?(L("Escape","Escape",27),setTimeout(n,60)):n()}}function G(e,t){for(var n=0;n<e.length;n++)if(e[n].identifier===t)return e[n];return null}function V(e){if(W&&"t"===String(W.id).charAt(0)){var t=+String(W.id).slice(1),n=G(e.changedTouches,t);n?(q(n.clientX,n.clientY),N("touchcancel"===e.type)):G(e.touches,t)||N(!0)}}function Z(e){"touch"!==e.pointerType&&W&&W.id==="p"+e.pointerId&&("pointerup"===e.type&&q(e.clientX,e.clientY),N("pointerup"!==e.type))}function J(){U.textContent=b?"RIGHT":"CLICK",U.classList.toggle("rmb",b)}function Q(e){P=e,B("ttd-btnright",e),U.classList.toggle("right-side",e),o("m-btnside").textContent=e?"Right":"Left"}function ee(e){j=e,B("ttd-tapjump",e),o("m-tapjump").textContent=e?"On":"Off",o("m-tapjump").classList.toggle("on",e)}function te(){var t=e.getBoundingClientRect();return{x:t.left+t.width/2,y:t.top+t.height/2}}function ne(e){b=e,o("b-rmb").classList.toggle("on",e),J()}function oe(e,t){o(e).addEventListener("click",(function(e){e.preventDefault(),t(e)}))}U.addEventListener("touchstart",(function(e){e.preventDefault();var t=e.changedTouches[0];t&&K("t"+t.identifier)}),{passive:!1}),U.addEventListener("touchmove",(function(e){if(e.preventDefault(),W){var t=G(e.changedTouches,+String(W.id).slice(1));t&&q(t.clientX,t.clientY)}}),{passive:!1}),U.addEventListener("touchend",V),U.addEventListener("touchcancel",V),document.addEventListener("touchend",V,!0),document.addEventListener("touchcancel",V,!0),U.addEventListener("pointerdown",(function(e){if("touch"!==e.pointerType){e.preventDefault(),K("p"+e.pointerId);try{U.setPointerCapture(e.pointerId)}catch(e){}}})),U.addEventListener("pointermove",(function(e){"touch"!==e.pointerType&&W&&W.id==="p"+e.pointerId&&q(e.clientX,e.clientY)})),["pointerup","pointercancel","lostpointercapture"].forEach((function(e){U.addEventListener(e,Z)})),document.addEventListener("visibilitychange",(function(){document.hidden&&N(!0)})),["touchstart","touchmove","touchend","touchcancel"].forEach((function(e,n){t.addEventListener(e,[I,M,D,D][n],{capture:!0,passive:!1})})),document.addEventListener("gesturestart",(function(e){e.preventDefault()}),{passive:!1}),document.addEventListener("dblclick",(function(e){e.preventDefault()}),{passive:!1}),oe("b-zin",(function(){var e=te();E(e.x,e.y,-100)})),oe("b-zout",(function(){var e=te();E(e.x,e.y,100)})),oe("b-rmb",(function(){ne(!b),b&&i(A?"Next CLICK press is a right-click":"Next tap is a right-click")})),oe("b-see",(function(){if(r._em_openttd_toggle_see_through){var e=1===r._em_openttd_toggle_see_through();o("b-see").classList.toggle("on",e),i(e?"Trees and buildings see-through":"Trees and buildings solid",1500)}})),oe("b-aim",(function(){z(!A),i(A?"Aim mode on: slide to move the cursor, press CLICK to click":"Aim mode off")})),oe("m-tapjump",(function(){ee(!j)})),oe("m-btnside",(function(){Q(!P)})),ee(j),Q(P);var ie=setInterval((function(){"undefined"!=typeof FS&&"none"===o("loader").style.display&&(clearInterval(ie),z(A),r._em_openttd_see_through_state&&o("b-see").classList.toggle("on",1===r._em_openttd_see_through_state()))}),500),ae=0;oe("b-esc",(function(){var e=Date.now();e-ae<600?L("Delete","Delete",46):L("Escape","Escape",27),ae=e}));var re={abc:[["q","w","e","r","t","y","u","i","o","p"],["a","s","d","f","g","h","j","k","l"],["{shift}","z","x","c","v","b","n","m","{bksp}"],["{123}","{left}","{space}","{right}","{enter}","{hide}"]],num:[["1","2","3","4","5","6","7","8","9","0"],["-","/",":",";","(",")","&","@",'"'],["{shift2}",".",",","?","!","'","#","%","{bksp}"],["{abc}","{left}","{space}","{right}","{enter}","{hide}"]],sym:[["[","]","{","}","#","%","^","*","+","="],["_","\\","|","~","<",">","$","€","£"],["{123b}",".",",","?","!","'","·","•","{bksp}"],["{abc}","{left}","{space}","{right}","{enter}","{hide}"]]},ce={"{shift}":"⇧","{bksp}":"⌫","{123}":"123","{abc}":"ABC","{space}":"space","{enter}":"done","{hide}":"⌄","{shift2}":"#+=","{123b}":"123","{left}":"◀","{right}":"▶"},se=o("vkb"),de="abc",ue=!1,le=!1;function fe(e){var t=function(e){var t=e.toUpperCase();return/^[A-Z0-9]$/.test(t)?t.charCodeAt(0):{" ":32,"-":189,"/":191,".":190,",":188,";":186,"'":222,"=":187,"[":219,"]":221,"\\":220}[e]||0}(e),n=/^[a-z]$/i.test(e)?"Key"+e.toUpperCase():/^[0-9]$/.test(e)?"Digit"+e:" "===e?"Space":"";function o(t,o){var i=new KeyboardEvent(t,{bubbles:!0,cancelable:!0,key:e,code:n,keyCode:o.keyCode,which:o.keyCode,charCode:o.charCode,shiftKey:e!==e.toLowerCase()});try{Object.defineProperty(i,"keyCode",{get:function(){return o.keyCode}}),Object.defineProperty(i,"which",{get:function(){return o.keyCode||o.charCode}}),Object.defineProperty(i,"charCode",{get:function(){return o.charCode}})}catch(e){}window.dispatchEvent(i)}o("keydown",{keyCode:t,charCode:0}),o("keypress",{keyCode:e.charCodeAt(0),charCode:e.charCodeAt(0)}),o("keyup",{keyCode:t,charCode:0})}function he(e){switch(e){case"{shift}":return ue=!ue,void pe();case"{123}":case"{123b}":return de="num",void pe();case"{shift2}":return de="sym",void pe();case"{abc}":return de="abc",void pe();case"{hide}":return void be(!1);case"{bksp}":return void L("Backspace","Backspace",8);case"{left}":return void L("ArrowLeft","ArrowLeft",37);case"{right}":return void L("ArrowRight","ArrowRight",39);case"{enter}":return void L("Enter","Enter",13);case"{space}":return void fe(" ")}fe(ue?e.toUpperCase():e),ue&&(ue=!1,pe())}function pe(){se.innerHTML="",re[de].forEach((function(e){var t=document.createElement("div");t.className="row",e.forEach((function(e){var n=document.createElement("div");n.className="k"+("{space}"===e?" space":"{enter}"===e?" enter":"{"===e.charAt(0)?" wide":"")+("{shift}"===e&&ue?" on":""),n.textContent=ce[e]||(ue&&"abc"===de?e.toUpperCase():e),n.dataset.k=e,t.appendChild(n)})),se.appendChild(t)}))}var me=null;function ve(){clearTimeout(me),clearInterval(me),me=null}se.addEventListener("touchstart",(function(e){e.preventDefault()}),{passive:!1}),se.addEventListener("pointerdown",(function(e){var t=e.target.closest&&e.target.closest(".k");if(t){e.preventDefault(),t.classList.add("down"),setTimeout((function(){t.classList.remove("down")}),110);var n=t.dataset.k;he(n),"{bksp}"!==n&&"{left}"!==n&&"{right}"!==n||(ve(),me=setTimeout((function(){me=setInterval((function(){he(n)}),70)}),400))}})),["pointerup","pointercancel","pointerleave"].forEach((function(e){se.addEventListener(e,ve)}));var ge=!1,ye=null;function we(){var n=0;if(le&&ye){var o=parseInt(getComputedStyle(c).getPropertyValue("--kbh"),10)||0,i=t.clientHeight-o;ye.b+10>i&&(n=Math.min(ye.b+10-i,o))}e.style.top=n?-n+"px":"",A&&$&&setTimeout((function(){X($.x,$.y)}),30)}function be(e){if(le=e,ge=!1,o("b-kbd").classList.toggle("on",e),e){var n=Math.round(Math.min(.42*t.clientHeight,210));c.style.setProperty("--kbh",n+"px"),de="abc",ue=!1,pe()}c.classList.toggle("kbd-open",e),we()}if(window.openttd_editbox=function(e,t,n,o,i){e?(ye={l:t,t:n,r:o,b:i},le||(be(!0),ge=!0),we()):(ye=null,le&&ge?be(!1):we())},oe("b-kbd",(function(){be(!le)})),oe("b-menu",(function(){o("sheet").classList.add("open")})),oe("m-close",(function(){o("sheet").classList.remove("open")})),o("sheet").addEventListener("click",(function(e){e.target===o("sheet")&&o("sheet").classList.remove("open")})),oe("m-flip",(function(){d=!d;try{localStorage.setItem("ttd-flip",d?"1":"0")}catch(e){}w(),s||i("Flip only applies when the phone is held sideways with rotation lock on",4e3)})),s){var xe=!1;try{xe="1"===localStorage.getItem("ttd-rot-hint"),localStorage.setItem("ttd-rot-hint","1")}catch(e){}xe||setTimeout((function(){i("Hold your phone sideways. Upside down? Menu → Flip upside down",6e3)}),1500)}function Ee(e){o("status").textContent=e}function Le(e){window.openttd_syncfs?window.openttd_syncfs(e):FS.syncfs(!1,(function(){e&&e()}))}function ke(){return"undefined"!=typeof FS&&FS.analyzePath&&FS.analyzePath(n).exists}oe("m-fs",(function(){var e=document.documentElement,t=e.requestFullscreen||e.webkitRequestFullscreen;t?t.call(e).catch&&t.call(e).catch((function(){})):i("On iPhone use Share → Add to Home Screen for full screen",4e3)})),oe("m-export",(function(){if(ke()){var e=[];["save","save/autosave","scenario"].forEach((function(t){var o=n+"/"+t;try{FS.readdir(o).forEach((function(t){if("."!==t&&".."!==t){var n=o+"/"+t;FS.isFile(FS.stat(n).mode)&&e.push({path:n,name:t})}}))}catch(e){}})),e.length?(e.forEach((function(e,t){setTimeout((function(){var t=new Blob([FS.readFile(e.path)],{type:"application/octet-stream"}),n=document.createElement("a");n.href=URL.createObjectURL(t),n.download=e.name,document.body.appendChild(n),n.click(),n.remove(),setTimeout((function(){URL.revokeObjectURL(n.href)}),5e3)}),400*t)})),Ee("Exporting "+e.length+" file(s) …")):Ee("No saved games yet.")}else Ee("Game is still loading.")}));var Ce=/^(trg[1chit]r?\.grf|sample\.cat)$/i;oe("m-import",(function(){o("m-file").click()})),o("m-file").addEventListener("change",(function(e){if(ke()){var t=_(e.target.files),o=0,i=[],a=0;t.forEach((function(r){var c=new FileReader;c.onload=function(){var s,d=r.name,u=d.toLowerCase();Ce.test(u)?(s="baseset",d=u,a++):s=/\.(grf|obg|obs|obm|tar)$/.test(u)?"content_download/newgrf":/\.(scn|sv0|ss0|sc1|ss1)$/.test(u)?"scenario":/\.(heightmap|png)$/.test(u)?"scenario/heightmap":"save",function(e){var t=e.split("/").filter(Boolean),n="";t.forEach((function(e){n+="/"+e;try{FS.mkdir(n)}catch(e){}}))}(n+"/"+s),FS.writeFile(n+"/"+s+"/"+d,new Uint8Array(c.result)),i.push(d+" → "+s),++o===t.length&&function(){if(a)try{FS.readdir("/baseset").forEach((function(e){/^orig_.*\.(obg|obs|grf)$/i.test(e)&&FS.writeFile(n+"/baseset/"+e,FS.readFile("/baseset/"+e))}))}catch(e){console.warn(e)}Le((function(){Ee("Imported: "+i.join(", ")+(a?". Reload, then pick “Original” in Game Options.":"."))})),e.target.value=""}()},c.readAsArrayBuffer(r)}))}else Ee("Game is still loading — try again in a moment.")}));var _e=Date.now();function Te(){ke()?Le((function(){location.reload()})):location.reload()}function Fe(){navigator.wakeLock&&navigator.wakeLock.request("screen").catch((function(){}))}oe("m-update",(function(){Te()})),!("serviceWorker"in navigator)||"https:"!==location.protocol&&"127.0.0.1"!==location.hostname||(navigator.serviceWorker.addEventListener("message",(function(e){e.data&&"updated"===e.data.type&&(Date.now()-_e<45e3?Te():(o("m-update").style.display="",i("Update ready: save your game, then Menu → Reload to update",6e3)))})),navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then((function(e){e.update().catch((function(){})),document.addEventListener("visibilitychange",(function(){document.hidden||e.update().catch((function(){}))}))})).catch((function(){})),window.caches&&caches.keys().then((function(e){var t=e.filter((function(e){return 0===e.indexOf("openttd-")}))[0];t&&(o("m-version").textContent="Version "+t.replace("openttd-",""))})).catch((function(){}))),document.addEventListener("visibilitychange",(function(){document.hidden||Fe()})),Fe();var Se=0;function Ie(){if(ke()&&r._em_openttd_quicksave&&!(Date.now()-Se<3e3)){Se=Date.now();try{r._em_openttd_quicksave()}catch(e){console.warn("quicksave",e)}Le()}}function Me(){var e=[];return["save","save/autosave"].forEach((function(t){var o=n+"/"+t;try{FS.readdir(o).forEach((function(t){if(/\.sav$/i.test(t)){var n=FS.stat(o+"/"+t);FS.isFile(n.mode)&&e.push({path:o+"/"+t,t:+n.mtime})}}))}catch(e){}})),e.sort((function(e,t){return t.t-e.t}))}document.addEventListener("visibilitychange",(function(){document.hidden&&Ie()})),window.addEventListener("pagehide",Ie),window.openttd_has_save=function(){return Me().length>0?1:0},window.openttd_continue=function(){var e=Me()[0];e&&r.cwrap("em_openttd_load_game",null,["string"])(e.path)},window.openttd_undo_changed=function(e){o("b-undo").disabled=!(e>0)},oe("b-undo",(function(){if(r._em_openttd_undo){var e=r._em_openttd_undo();i(e<0?"Nothing to undo":e>0?"Undone ("+e+" more step"+(1===e?"":"s")+" available)":"Undone")}}))}()</script><script async src=openttd.js></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="OpenTTD">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-192.png">
+  <title>OpenTTD</title>
+  <style>
+    :root {
+      --gutter: max(46px, env(safe-area-inset-right));
+      --pad-left: env(safe-area-inset-left);
+      --btn-bg: #3b3b3b;
+      --btn-border: #6c6c6c;
+      --btn-fg: #f0f0f0;
+      --accent: #c8a040;
+    }
+    html, body {
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      background: #000; color: #eee; overflow: hidden;
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+    #app {
+      position: fixed; inset: 0;
+      box-sizing: border-box; /* notch padding counts inside the width (sideways mode sets an exact width) */
+      display: flex; flex-direction: row;
+      padding-left: var(--pad-left);
+    }
+    #stage { position: relative; flex: 1; min-width: 0; height: 100%; }
+    canvas.emscripten {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      border: 0; display: block; outline: none;
+      image-rendering: pixelated; image-rendering: crisp-edges;
+      cursor: none;
+      touch-action: none;
+    }
+    #controls {
+      position: relative; z-index: 6; /* always above the game canvas */
+      width: var(--gutter); flex: none; height: 100%;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      gap: 5px; padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box;
+      background: #111;
+    }
+    #controls button {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--btn-bg); color: var(--btn-fg);
+      border: 1px solid var(--btn-border);
+      font-size: 18px; line-height: 1; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+    }
+    #app.rot #controls { padding-bottom: 0; }
+    #controls button:disabled { opacity: .35; }
+    #controls button.on { background: var(--accent); color: #111; border-color: #f0d080; }
+    #controls button:active { filter: brightness(1.3); }
+    #controls svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    /* In-app keyboard. It turns with the app (the iPhone keyboard cannot), and the
+     * game area shrinks above it so text boxes stay visible. */
+    #vkb {
+      position: absolute; left: 0; right: 0; bottom: 0; height: var(--kbh, 0px);
+      display: none; flex-direction: column; gap: 5px; padding: 6px 4px;
+      box-sizing: border-box; background: #1c1c1e; z-index: 7;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+    }
+    .kbd-open #vkb { display: flex; }
+    .kbd-open #clickbtn { bottom: calc(var(--kbh) + 10px); }
+    #vkb .row { flex: 1; display: flex; gap: 5px; justify-content: center; min-height: 0; }
+    #vkb .k {
+      flex: 1 1 0; max-width: 64px; border-radius: 6px; background: #4a4a4e; color: #f2f2f2;
+      display: flex; align-items: center; justify-content: center;
+      font: 500 17px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+      box-shadow: 0 1px 0 #000;
+    }
+    #vkb .k.wide { flex-grow: 1.5; max-width: 96px; background: #2f2f33; font-size: 14px; }
+    #vkb .k.space { flex-grow: 5; max-width: none; }
+    #vkb .k.enter { flex-grow: 1.8; max-width: 110px; background: var(--accent); color: #111; }
+    #vkb .k.on { background: #e8e8e8; color: #111; }
+    #vkb .k.down { filter: brightness(1.6); transform: translateY(1px); }
+
+    /* Loading / message box */
+    #loader {
+      position: absolute; inset: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      background: #1c2a14 radial-gradient(circle at 50% 40%, #3b5226 0%, #1c2a14 70%);
+    }
+    #box { min-width: 260px; max-width: 80%; border: 1px solid #a8a8a8; outline: 1px solid #626262; }
+    #title { background: #838383; color: #fff; padding: 2px 8px; text-shadow: 1px 1px #101010; }
+    #message { background: #c0c0c0; color: #101010; padding: 8px; min-height: 20px; }
+    #box.error #title, #box.error #message { background: #b00000; color: #fcf880; }
+    #bar { height: 6px; background: #555; margin-top: 8px; }
+    #bar > div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+    /* Phone held sideways with rotation lock on: the browser still thinks it
+     * is portrait, so we turn the whole app 90° ourselves. Width/height are
+     * set from JS. The notch ends up on one of the short sides. */
+    #app.rot { right: auto; bottom: auto; transform-origin: 0 0; }
+    #app.rot.cw  { transform: translateX(var(--vw)) rotate(90deg);
+                   padding-left: env(safe-area-inset-top);
+                   --gutter: max(46px, env(safe-area-inset-bottom)); }
+    #app.rot.ccw { transform: translateY(var(--vh)) rotate(-90deg);
+                   padding-left: env(safe-area-inset-bottom);
+                   --gutter: max(46px, env(safe-area-inset-top)); }
+    #app.rot #sheet, #app.rot #toast { position: absolute; }
+    /* keep the menu clear of the notch / Dynamic Island and the home bar */
+    #sheet { box-sizing: border-box;
+             padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+                      max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+    #app.rot.cw #sheet  { padding: 8px var(--gutter) 8px max(8px, env(safe-area-inset-top)); }
+    #app.rot.ccw #sheet { padding: 8px max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+
+    /* Aim mode: trackpad cursor + click button */
+    #aimring {
+      position: absolute; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+      border: 2px solid rgba(255, 220, 120, .9); border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 1px rgba(0,0,0,.6);
+      pointer-events: none; display: none; z-index: 3;
+    }
+    #clickbtn {
+      position: absolute; bottom: 10px; left: 10px; z-index: 4;
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(200, 160, 64, .55); border: 2px solid rgba(255, 230, 160, .8);
+      color: #111; font: 600 12px/1 -apple-system, sans-serif;
+      display: none; align-items: center; justify-content: center;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+    }
+    #clickbtn.right-side { left: auto; right: 10px; }
+    #clickbtn.down { background: rgba(240, 200, 90, .9); transform: scale(.94); }
+    #clickbtn.rmb { background: rgba(120, 170, 230, .7); border-color: rgba(200, 225, 255, .9); }
+    #clickbtn.cancel { background: rgba(200, 50, 40, .85); border-color: #fcc; color: #fff; }
+    .aim #aimring, .aim #clickbtn { display: flex; }
+    .aim #aimring { display: block; }
+    #panel .toggle { min-width: 52px; }
+    #panel .toggle.on { background: var(--accent); color: #111; border-color: #f0d080; }
+
+    /* Menu sheet */
+    #sheet {
+      display: none; position: fixed; inset: 0; z-index: 30;
+      background: rgba(0,0,0,.6);
+      align-items: center; justify-content: center;
+    }
+    #sheet.open { display: flex; }
+    #panel {
+      background: #2b2b2b; border: 1px solid #6c6c6c; border-radius: 10px;
+      /* % of the sheet, not vw/vh: in sideways mode the viewport units are the upright screen */
+      width: min(560px, 100%); max-height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 14px 16px; box-sizing: border-box; touch-action: pan-x pan-y;
+      -webkit-user-select: text; user-select: text;
+    }
+    #panel h2 { margin: 0 0 8px; font-size: 17px; color: var(--accent); }
+    #panel h3 { margin: 14px 0 4px; font-size: 14px; }
+    #panel p, #panel li { color: #ccc; font-size: 13px; margin: 4px 0; }
+    #panel ul { padding-left: 18px; margin: 4px 0; }
+    #panel .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    #panel button {
+      background: var(--btn-bg); color: var(--btn-fg); border: 1px solid var(--btn-border);
+      border-radius: 8px; padding: 8px 12px; font-size: 14px;
+    }
+    #panel button.primary { background: var(--accent); color: #111; border-color: #f0d080; }
+    #panel .disclaimer { background: #4a3a10; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 8px; color: #f3e2b0; }
+    #status { color: #9fd08f; font-size: 13px; min-height: 18px; }
+    #toast {
+      position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 40;
+      background: rgba(30,30,30,.92); border: 1px solid #6c6c6c; border-radius: 8px;
+      padding: 6px 12px; font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="stage">
+      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+      <div id="aimring"></div>
+      <div id="clickbtn">CLICK</div>
+      <div id="vkb"></div>
+      <div id="loader">
+        <div id="box">
+          <div id="title">Loading …</div>
+          <div id="message">Preparing game …<div id="bar"><div></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="controls">
+      <button id="b-zin" aria-label="Zoom in"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M10 7v6M7 10h6M15 15l5 5"/></svg></button>
+      <button id="b-zout" aria-label="Zoom out"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M7 10h6M15 15l5 5"/></svg></button>
+      <button id="b-see" aria-label="See-through trees and buildings"><svg viewBox="0 0 24 24"><path d="M12 3l6 9h-3l4 6H5l4-6H6z" stroke-dasharray="2.5 2"/><path d="M12 18v3"/></svg></button>
+      <button id="b-aim" aria-label="Aim mode (trackpad cursor + click button)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
+      <button id="b-rmb" aria-label="Next tap is a right-click"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v7"/><path d="M12 3a6 6 0 0 1 6 6v1h-6z" fill="currentColor"/></svg></button>
+      <button id="b-undo" aria-label="Back (undo last action)" disabled><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <button id="b-esc" aria-label="Close windows / cancel tool"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button id="b-kbd" aria-label="Keyboard"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
+      <button id="b-menu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+    <div id="sheet">
+      <div id="panel">
+        <h2>OpenTTD for phone</h2>
+        <p class="disclaimer"><b>Please note:</b>&nbsp;this app is intended for people who own a copy of Transport Tycoon Deluxe. If you don’t own the original game, please buy it before using this app.</p>
+        <div class="row">
+          <button id="m-close" class="primary">Back to game</button>
+          <button id="m-fs">Fullscreen</button>
+          <button id="m-flip">Flip upside down</button>
+          <button id="m-update" class="primary" style="display:none">Reload to update</button>
+        </div>
+
+        <h3>Aim mode</h3>
+      <p>Turn on with the&nbsp;<b>crosshair</b>&nbsp;button. One finger slides the cursor like a laptop trackpad (it never clicks by itself); the round&nbsp;<b>CLICK</b>&nbsp;button does the clicking: tap = click, hold = mouse button held down (slide your other finger to drag-build, release to finish). To cancel a hold, slide your thumb off the button before letting go (this also drops the selected build tool). For a right-click, press the right-click side button first. Two fingers still scroll and zoom.</p>
+      <div class="row">
+        <button id="m-tapjump" class="toggle">Off</button><span style="align-self:center;color:#ccc">Tap on the map moves the cursor there</span>
+      </div>
+      <div class="row">
+        <button id="m-btnside" class="toggle">Left</button><span style="align-self:center;color:#ccc">CLICK button corner</span>
+      </div>
+
+      <h3>Touch controls</h3>
+        <ul>
+          <li><b>Tap</b>&nbsp;= click.&nbsp;<b>Drag</b>&nbsp;= scroll the map, or drag-build when a tool is selected.</li>
+          <li><b>Two fingers</b>: drag to scroll (even with a tool selected), pinch to zoom.</li>
+          <li><b>Long-press</b>&nbsp;= right-click (shows tooltips, closes dropdowns).</li>
+          <li>Side buttons: zoom in/out, see-through trees &amp; buildings (dashed tree), “next tap is a right-click”, close top window (Delete key) / cancel tool (Esc), keyboard, this menu.</li>
+          <li><b>Rotation lock on?</b>&nbsp;No need to unlock it: hold the phone sideways and the game turns itself. If it is upside down, use&nbsp;<b>Flip upside down</b>&nbsp;above.</li>
+        <li>If the interface is too small or big: OpenTTD menu →&nbsp;<i>Game Options → Graphics → Interface size</i>.</li>
+        </ul>
+
+        <h3>Saves</h3>
+        <p>Your game is saved automatically every minute and the moment you leave the app, so closing it in a hurry loses little or nothing. <b>Continue</b> at the top of the main menu picks up your most recent game.</p>
+        <p>The <b>Back</b> side button (curved arrow) undoes your last action, up to 5 steps. It reloads the game from just before that action, so open windows close and the clock jumps back a few seconds.</p>
+        <p>Games are saved inside this browser on this device. Export them now and then as a backup.</p>
+        <div class="row">
+          <button id="m-export">Export saves</button>
+          <button id="m-import">Import files…</button>
+        </div>
+        <div id="status"></div>
+
+        <h3>Using your own original Transport Tycoon Deluxe graphics &amp; sounds</h3>
+        <p>This app ships with the free OpenGFX graphics and OpenSFX sounds. If you own TTD on a computer, you can use its original files instead:</p>
+        <ul>
+          <li>Find these files in your TTD install folder:&nbsp;<code>TRG1R.GRF, TRGCR.GRF, TRGHR.GRF, TRGIR.GRF, TRGTR.GRF</code>&nbsp;(Windows version) or&nbsp;<code>TRG1.GRF, TRGC.GRF, TRGH.GRF, TRGI.GRF, TRGT.GRF</code>&nbsp;(DOS version), plus&nbsp;<code>SAMPLE.CAT</code>&nbsp;for sounds.</li>
+          <li>Put them on your phone (e.g. iCloud Drive / Files), tap&nbsp;<b>Import files…</b>&nbsp;and select them all.</li>
+          <li>Reload, then in OpenTTD choose&nbsp;<i>Game Options → Graphics → Base graphics set → Original</i>&nbsp;(and the same for base sounds).</li>
+        </ul>
+        <p>Your original TTD&nbsp;<code>.SV1</code>&nbsp;save games can be imported the same way and loaded from&nbsp;<i>Load Game</i>.</p>
+
+        <h3>Install</h3>
+        <p>On iPhone: Safari → Share →&nbsp;<b>Add to Home Screen</b>. It then opens full-screen and keeps working offline.</p>
+        <p id="m-version" style="color:#888"></p>
+      <p style="color:#888">OpenTTD is free software (GPL v2) by the OpenTTD team, openttd.org. Not affiliated with or endorsed by the original game’s publishers.</p>
+        <input type="file" id="m-file" multiple style="display:none">
+      </div>
+    </div>
+
+    <div id="toast"></div>
+  </div>
+
+
+  <script>
+  (function () {
+    'use strict';
+    var canvas = document.getElementById('canvas');
+    var stage = document.getElementById('stage');
+    var PERSONAL = '/home/web_user/.openttd';
+
+    function $(id) { return document.getElementById(id); }
+    function toast(text, ms) {
+      var t = $('toast'); t.textContent = text; t.classList.add('show');
+      clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('show'); }, ms || 2500);
+    }
+    function setLoader(title, msg, isError) {
+      $('loader').style.display = 'flex';
+      $('title').textContent = title;
+      if (msg !== undefined) $('message').innerHTML = msg;
+      $('box').className = isError ? 'error' : '';
+    }
+
+    /* ---------------------------------------------------------------
+     * Emscripten Module
+     * ------------------------------------------------------------- */
+    var Module = window.Module = {
+      preRun: [], postRun: [], arguments: [],
+      totalDependencies: 0,
+      print: function (t) { console.log(t); },
+      printErr: function (t) { console.warn(t); },
+      canvas: canvas,
+      setStatus: function (text) {
+        var m = text && text.match(/\((\d+(?:\.\d+)?)\/(\d+)\)/);
+        var bar = document.querySelector('#bar > div');
+        if (m && bar) bar.style.width = Math.round(100 * m[1] / m[2]) + '%';
+        if (!text) $('loader').style.display = 'none';
+      },
+      monitorRunDependencies: function (left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        if (left === 0) {
+          $('loader').style.display = 'none';
+        }
+      },
+      /* Called (from our pre.js addition) once the saved files are loaded
+       * from IndexedDB, before the game starts. */
+      onFsReady: function () { writeDefaultConfig(); },
+      onBootstrap: function (cur, total) {
+        setLoader('Missing base graphics', 'Downloading base graphics … ' + cur + ' / ' + total + ' bytes');
+      },
+      onBootstrapFailed: function () {
+        setLoader('Missing base graphics', 'Could not download base graphics. Check your connection and reload.', true);
+      },
+      onBootstrapReload: function () { setLoader('Base graphics ready', 'Reloading …'); },
+      onExit: function () {
+        setLoader('Thanks for playing!', 'Tap to start again.');
+        $('loader').onclick = function () { location.reload(); };
+      },
+      onAbort: function () {
+        setLoader('Crash :(', 'The game crashed. Tap to reload — your saves are kept.', true);
+        $('loader').onclick = function () { location.reload(); };
+      },
+      onWarningFs: function () { /* we explain storage in the menu instead */ }
+    };
+    window.onerror = function () { Module.onAbort(); };
+
+    /* First run: phone-friendly defaults. Only written when no config exists,
+     * so anything changed in-game is kept. */
+    /* One-time change for configs written by older versions of this app:
+     * autosave every minute instead of every 10. Changing it in-game later is kept. */
+    function migrateConfig(cfg) {
+      var done = false;
+      try { done = localStorage.getItem('ttd-autosave-1min') === '1'; } catch (e) {}
+      if (done) return;
+      var text = FS.readFile(cfg, { encoding: 'utf8' });
+      text = text.replace(/^autosave\s*=.*$/m, '').replace(/^autosave_interval\s*=.*$/m, '');
+      if (/^\[gui\]\s*$/m.test(text)) text = text.replace(/^\[gui\]\s*$/m, '[gui]\nautosave_interval = 1');
+      else text += '\n[gui]\nautosave_interval = 1\n';
+      FS.writeFile(cfg, text);
+      try { localStorage.setItem('ttd-autosave-1min', '1'); } catch (e) {}
+    }
+    function writeDefaultConfig() {
+      try {
+        var cfg = PERSONAL + '/openttd.cfg';
+        try { FS.stat(cfg); migrateConfig(cfg); return; } catch (e) { /* not there yet */ }
+        var shortSide = Math.min(window.innerWidth, window.innerHeight);
+        var scale = shortSide >= 700 ? 150 : 100;
+        FS.writeFile(cfg, [
+          '[misc]',
+          'gui_scale = ' + scale,
+          '',
+          '[gui]',
+          '; 3 = drag the map with one finger (left button)',
+          'scroll_mode = 3',
+          '; autosave every minute, so little is lost if the app is closed in a hurry',
+          'autosave_interval = 1',
+          'show_finances = true',
+          'hover_delay_ms = 0',
+          '',
+          '[network]',
+          'participate_survey = no',
+          ''
+        ].join('\n'));
+      } catch (e) { console.warn('config', e); }
+    }
+
+    /* ---------------------------------------------------------------
+     * Sideways mode for phones with rotation lock on.
+     * When the browser reports portrait on a phone we rotate #app by 90°.
+     * SDL measures the canvas with getBoundingClientRect(), which would
+     * give the rotated (portrait) box, so we hand it the unrotated box and
+     * convert finger positions into that same unrotated space.
+     * ------------------------------------------------------------- */
+    var app = document.getElementById('app');
+    var rot = 0; // 0 = normal, 1 = cw (phone turned anticlockwise), -1 = ccw
+    var flip = false;
+    try { flip = localStorage.getItem('ttd-flip') === '1'; } catch (e) {}
+    var realRect = Element.prototype.getBoundingClientRect;
+    canvas.getBoundingClientRect = function () {
+      if (!rot) return realRect.call(canvas);
+      var w = canvas.offsetWidth, h = canvas.offsetHeight, l = stage.offsetLeft, t = canvas.offsetTop;
+      return { left: l, top: t, right: l + w, bottom: t + h, x: l, y: t, width: w, height: h };
+    };
+    /* The space the page really has. iPhone Home Screen apps can report a
+     * window size that includes the status bar, which pushed the side bar off
+     * the screen; so measure a fixed full-screen probe as well and take the
+     * smallest answer. */
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;visibility:hidden;pointer-events:none;z-index:-1';
+    document.body.appendChild(probe);
+    var vpW = 0, vpH = 0;
+    function measure() {
+      var de = document.documentElement, vv = window.visualViewport;
+      var ws = [window.innerWidth, de.clientWidth, probe.offsetWidth], hs = [window.innerHeight, de.clientHeight, probe.offsetHeight];
+      if (vv && vv.scale === 1) { ws.push(Math.round(vv.width)); hs.push(Math.round(vv.height)); }
+      vpW = Math.min.apply(null, ws.filter(function (v) { return v > 0; }));
+      vpH = Math.min.apply(null, hs.filter(function (v) { return v > 0; }));
+    }
+    /* screen (client) point → point in #app's own, unrotated coordinates */
+    function toApp(x, y) {
+      if (rot === 1) return { x: y, y: vpW - x };
+      if (rot === -1) return { x: vpH - y, y: x };
+      return { x: x, y: y };
+    }
+    function applyRotation() {
+      measure();
+      var W = vpW, H = vpH;
+      var want = (H > W && W < 700) ? (flip ? -1 : 1) : 0;
+      if (want !== rot) {
+        rot = want;
+        app.classList.toggle('rot', !!rot);
+        app.classList.toggle('cw', rot === 1);
+        app.classList.toggle('ccw', rot === -1);
+      }
+      if (rot) {
+        app.style.width = H + 'px'; app.style.height = W + 'px';
+        app.style.setProperty('--vw', W + 'px'); app.style.setProperty('--vh', H + 'px');
+      } else {
+        app.style.width = app.style.height = '';
+      }
+    }
+    applyRotation();
+    /* iPhone may settle on its final size a moment after launch without a
+     * resize event: re-check for the first few seconds. */
+    var settleChecks = 0, settle = setInterval(function () {
+      var w = vpW, h = vpH; measure();
+      if (w !== vpW || h !== vpH) relayout();
+      if (++settleChecks >= 10) clearInterval(settle);
+    }, 500);
+    function relayout() {
+      applyRotation();
+      /* SDL re-reads the canvas size on window resize */
+      window.dispatchEvent(new Event('resize'));
+    }
+    window.addEventListener('resize', function (e) { if (e.isTrusted) setTimeout(relayout, 50); });
+    window.addEventListener('orientationchange', function () { setTimeout(relayout, 300); });
+
+    /* ---------------------------------------------------------------
+     * Touch → mouse translation.
+     * We catch touches in the capture phase on the stage so SDL never sees
+     * them, and feed SDL plain mouse events instead.
+     * ------------------------------------------------------------- */
+    var LONG_PRESS_MS = 450;
+    var MOVE_SLOP = 9;          // px before a touch becomes a drag
+    var PINCH_STEP = 1.22;      // finger-distance ratio per zoom step
+    var rightNext = false;
+
+    function mouse(type, x, y, button, buttons) {
+      var ev = new MouseEvent(type, {
+        bubbles: true, cancelable: true, view: window,
+        clientX: x, clientY: y, screenX: x, screenY: y,
+        button: button || 0, buttons: buttons || 0
+      });
+      canvas.dispatchEvent(ev);
+    }
+    function wheel(x, y, dy) {
+      canvas.dispatchEvent(new WheelEvent('wheel', {
+        bubbles: true, cancelable: true, view: window,
+        clientX: x, clientY: y, deltaY: dy, deltaMode: 0
+      }));
+    }
+    function key(code, keyName, keyCode) {
+      var init = { bubbles: true, cancelable: true, code: code, key: keyName, keyCode: keyCode, which: keyCode };
+      var down = new KeyboardEvent('keydown', init);
+      var up = new KeyboardEvent('keyup', init);
+      [down, up].forEach(function (e) {
+        try {
+          Object.defineProperty(e, 'keyCode', { get: function () { return keyCode; } });
+          Object.defineProperty(e, 'which', { get: function () { return keyCode; } });
+        } catch (x) {}
+      });
+      window.dispatchEvent(down);
+      setTimeout(function () { window.dispatchEvent(up); }, 30);
+    }
+    function rightClick(x, y) {
+      mouse('mousemove', x, y, 0, 0);
+      mouse('mousedown', x, y, 2, 2);
+      setTimeout(function () { mouse('mouseup', x, y, 2, 0); }, 40);
+    }
+    function leftClick(x, y) {
+      mouse('mousemove', x, y, 0, 0);
+      mouse('mousedown', x, y, 0, 1);
+      setTimeout(function () { mouse('mouseup', x, y, 0, 0); }, 40);
+    }
+
+    var g = null; // current gesture
+    function pt(t) { return toApp(t.clientX, t.clientY); }
+    function touchesArr(list) { var a = []; for (var i = 0; i < list.length; i++) a.push(list[i]); return a; }
+    function mid(a, b) { return toApp((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2); }
+    function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
+
+    function endOne(p, cancelled) {
+      if (!g) return;
+      clearTimeout(g.timer);
+      if (g.mode === 'pending' && !cancelled) {
+        if (rightNext) { rightClick(p.x, p.y); setRightNext(false); }
+        else leftClick(p.x, p.y);
+      } else if (g.mode === 'drag') {
+        mouse('mouseup', p.x, p.y, 0, 0);
+      } else if (g.mode === 'hold') {
+        mouse('mouseup', g.start.x, g.start.y, 2, 0);
+      }
+    }
+    function endTwo() {
+      if (g && g.mode === 'two' && g.panning) mouse('mouseup', g.m.x, g.m.y, 2, 0);
+    }
+
+    function onStart(e) {
+      if (e.target === cbtn || vkb.contains(e.target)) return;
+      e.preventDefault(); e.stopPropagation();
+      var ts = touchesArr(e.targetTouches);
+      if (ts.length === 1 && !g && aim) {
+        var q = pt(ts[0]);
+        g = { mode: 'aim', id: ts[0].identifier, start: q, last: q, t0: Date.now(), moved: false };
+      } else if (ts.length === 1 && !g) {
+        var p = pt(ts[0]);
+        mouse('mousemove', p.x, p.y, 0, 0);
+        g = { mode: 'pending', id: ts[0].identifier, start: p, last: p };
+        g.timer = setTimeout(function () {
+          if (g && g.mode === 'pending') {
+            /* Hold the right button until the finger lifts, so OpenTTD's
+             * right-click tooltips stay visible while pressing. */
+            g.mode = 'hold';
+            mouse('mousedown', g.start.x, g.start.y, 2, 2);
+            if (navigator.vibrate) navigator.vibrate(15);
+          }
+        }, LONG_PRESS_MS);
+      } else if (ts.length >= 2) {
+        if (g && g.mode !== 'two') { endOne(g.last, true); }
+        if (g && g.mode === 'two') return;
+        var a = ts[0], b = ts[1];
+        var m = mid(a, b);
+        g = { mode: 'two', m: m, d0: dist(a, b), panning: false, start: m };
+      }
+    }
+    function onMove(e) {
+      if (e.target === cbtn || vkb.contains(e.target)) return;
+      e.preventDefault(); e.stopPropagation();
+      if (!g) return;
+      var ts = touchesArr(e.targetTouches);
+      if (g.mode === 'aim') {
+        var ta = ts.filter(function (x) { return x.identifier === g.id; })[0];
+        if (!ta) return;
+        var a = pt(ta);
+        if (!g.moved && Math.hypot(a.x - g.start.x, a.y - g.start.y) < 4) return;
+        g.moved = true;
+        var dx = a.x - g.last.x, dy = a.y - g.last.y, sp = Math.hypot(dx, dy);
+        /* gentle acceleration: slow moves are 1:1 for precision, fast flicks travel further */
+        var gain = 1 + Math.min(1.5, Math.max(0, (sp - 6) / 10));
+        moveCursor(cur.x + dx * gain, cur.y + dy * gain);
+        g.last = a;
+      } else if (g.mode === 'pending' || g.mode === 'drag') {
+        var t = ts.filter(function (x) { return x.identifier === g.id; })[0];
+        if (!t) return;
+        var p = pt(t);
+        if (g.mode === 'pending') {
+          if (Math.hypot(p.x - g.start.x, p.y - g.start.y) < MOVE_SLOP) return;
+          clearTimeout(g.timer);
+          if (rightNext) { setRightNext(false); }
+          g.mode = 'drag';
+          mouse('mousedown', g.start.x, g.start.y, 0, 1);
+        }
+        g.last = p;
+        mouse('mousemove', p.x, p.y, 0, 1);
+      } else if (g.mode === 'two' && ts.length >= 2) {
+        var m = mid(ts[0], ts[1]), d = dist(ts[0], ts[1]);
+        /* pinch → wheel steps */
+        var ratio = d / g.d0;
+        if (ratio > PINCH_STEP) { wheel(m.x, m.y, -100); g.d0 = d; g.zoomed = true; }
+        else if (ratio < 1 / PINCH_STEP) { wheel(m.x, m.y, 100); g.d0 = d; g.zoomed = true; }
+        /* two-finger pan → right-button drag (map follows fingers) */
+        if (!g.panning && Math.hypot(m.x - g.start.x, m.y - g.start.y) > MOVE_SLOP) {
+          g.panning = true;
+          mouse('mousemove', g.m.x, g.m.y, 0, 0);
+          mouse('mousedown', g.m.x, g.m.y, 2, 2);
+        }
+        if (g.panning) mouse('mousemove', m.x, m.y, 0, 2);
+        g.m = m;
+      }
+    }
+    function onEnd(e) {
+      if (e.target === cbtn || vkb.contains(e.target)) return;
+      e.preventDefault(); e.stopPropagation();
+      if (!g) return;
+      var ts = touchesArr(e.targetTouches);
+      if (g.mode === 'two') {
+        if (ts.length < 2) {
+          endTwo(); g = ts.length ? { mode: 'done' } : null;
+          if (aim) setTimeout(function () { moveCursor(cur.x, cur.y); }, 30);
+        }
+        return;
+      }
+      if (g.mode === 'aim') {
+        if (ts.length === 0) {
+          var tj = touchesArr(e.changedTouches).filter(function (x) { return x.identifier === g.id; })[0];
+          if (tapJump && !g.moved && Date.now() - g.t0 < 400 && tj && e.type !== 'touchcancel') {
+            var j = pt(tj); moveCursor(j.x, j.y);
+          }
+          g = null;
+        }
+        return;
+      }
+      if (g.mode === 'done') { if (ts.length === 0) g = null; return; }
+      if (ts.length === 0) {
+        var t = touchesArr(e.changedTouches).filter(function (x) { return x.identifier === g.id; })[0];
+        endOne(t ? pt(t) : g.last, e.type === 'touchcancel');
+        g = null;
+      }
+    }
+    /* ---------------------------------------------------------------
+     * Aim mode: trackpad-style cursor + a CLICK button for the other thumb.
+     * ------------------------------------------------------------- */
+    function pref(k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v === '1'; } catch (e) { return d; } }
+    function setPref(k, v) { try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {} }
+    var aim = pref('ttd-aim', false), tapJump = pref('ttd-tapjump', true), btnRight = pref('ttd-btnright', false);
+    var cur = null, held = 0; // held: 0 none, 1 left, 2 right
+    var ring = document.getElementById('aimring'), cbtn = document.getElementById('clickbtn');
+    function canvasBox() { return canvas.getBoundingClientRect(); }
+    function moveCursor(x, y) {
+      var r = canvasBox();
+      cur = { x: Math.max(r.left, Math.min(r.left + r.width - 1, x)), y: Math.max(r.top, Math.min(r.top + r.height - 1, y)) };
+      mouse('mousemove', cur.x, cur.y, 0, held === 2 ? 2 : held === 1 ? 1 : 0);
+      ring.style.transform = 'translate(' + (cur.x - stage.offsetLeft) + 'px,' + (cur.y - stage.offsetTop) + 'px)';
+    }
+    function setAim(on) {
+      aim = on; setPref('ttd-aim', on);
+      document.getElementById('app').classList.toggle('aim', on);
+      $('b-aim').classList.toggle('on', on);
+      if (on) {
+        if (!cur) { var r = canvasBox(); cur = { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+        moveCursor(cur.x, cur.y);
+      }
+    }
+    function inside(el, x, y) { var r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+    /* One press of the CLICK button: start → (move) → finish. Touches are followed
+     * with touch events, which keep reporting to the button even after the finger
+     * slides off it and always report the lift (iPhone did not always send the
+     * matching pointer event, which left the button stuck on CANCEL). Mouse
+     * presses (computers) use pointer events. Every way a press can end goes
+     * through finishPress(), which is safe to call more than once. */
+    var press = null; // { id, out }
+    function startPress(id) {
+      if (press) finishPress(true);          // a missed lift: clean it up first
+      if (!cur) return;
+      press = { id: id, out: false };
+      held = rightNext ? 2 : 1;
+      if (rightNext) setRightNext(false);
+      cbtn.classList.add('down');
+      mouse('mousemove', cur.x, cur.y, 0, 0);
+      mouse('mousedown', cur.x, cur.y, held === 2 ? 2 : 0, held === 2 ? 2 : 1);
+    }
+    function movePress(x, y) {
+      if (!press) return;
+      press.out = !inside(cbtn, x, y);
+      cbtn.classList.toggle('cancel', press.out);
+      cbtn.textContent = press.out ? 'CANCEL' : (held === 2 ? 'RIGHT' : 'CLICK');
+    }
+    function finishPress(cancel) {
+      if (!press) return;
+      var b = held;
+      cancel = cancel || press.out;
+      press = null; held = 0;
+      cbtn.classList.remove('down', 'cancel');
+      updateBtnLabel();
+      var up = function () { mouse('mouseup', cur.x, cur.y, b === 2 ? 2 : 0, 0); };
+      if (cancel && b === 1) { key('Escape', 'Escape', 27); setTimeout(up, 60); }
+      else up();
+    }
+    function findTouch(list, id) { for (var i = 0; i < list.length; i++) if (list[i].identifier === id) return list[i]; return null; }
+    cbtn.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      var t = e.changedTouches[0];
+      if (t) startPress('t' + t.identifier);
+    }, { passive: false });
+    cbtn.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+      if (!press) return;
+      var t = findTouch(e.changedTouches, +String(press.id).slice(1));
+      if (t) movePress(t.clientX, t.clientY);
+    }, { passive: false });
+    function touchEnded(e) {
+      if (!press || String(press.id).charAt(0) !== 't') return;
+      var id = +String(press.id).slice(1);
+      var t = findTouch(e.changedTouches, id);
+      if (t) { movePress(t.clientX, t.clientY); finishPress(e.type === 'touchcancel'); }
+      else if (!findTouch(e.touches, id)) finishPress(true); // our finger is gone without us hearing: cancel safely
+    }
+    cbtn.addEventListener('touchend', touchEnded);
+    cbtn.addEventListener('touchcancel', touchEnded);
+    /* belt and braces: any lift anywhere also checks that our finger is still down */
+    document.addEventListener('touchend', touchEnded, true);
+    document.addEventListener('touchcancel', touchEnded, true);
+    /* mouse (computers) */
+    cbtn.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch') return;
+      e.preventDefault();
+      startPress('p' + e.pointerId);
+      try { cbtn.setPointerCapture(e.pointerId); } catch (x) {}
+    });
+    cbtn.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch' || !press || press.id !== 'p' + e.pointerId) return;
+      movePress(e.clientX, e.clientY);
+    });
+    function pointerEnded(e) {
+      if (e.pointerType === 'touch' || !press || press.id !== 'p' + e.pointerId) return;
+      if (e.type === 'pointerup') movePress(e.clientX, e.clientY);
+      finishPress(e.type !== 'pointerup');
+    }
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (t) { cbtn.addEventListener(t, pointerEnded); });
+    /* leaving the app mid-press: let go safely */
+    document.addEventListener('visibilitychange', function () { if (document.hidden) finishPress(true); });
+    function updateBtnLabel() {
+      cbtn.textContent = rightNext ? 'RIGHT' : 'CLICK';
+      cbtn.classList.toggle('rmb', rightNext);
+    }
+    function setBtnSide(right) {
+      btnRight = right; setPref('ttd-btnright', right);
+      cbtn.classList.toggle('right-side', right);
+      $('m-btnside').textContent = right ? 'Right' : 'Left';
+    }
+    function setTapJump(on) {
+      tapJump = on; setPref('ttd-tapjump', on);
+      $('m-tapjump').textContent = on ? 'On' : 'Off';
+      $('m-tapjump').classList.toggle('on', on);
+    }
+
+    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(function (type, i) {
+      stage.addEventListener(type, [onStart, onMove, onEnd, onEnd][i], { capture: true, passive: false });
+    });
+    /* Stop Safari's own gestures (pinch-zoom of the page, double-tap zoom). */
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('dblclick', function (e) { e.preventDefault(); }, { passive: false });
+
+    /* ---------------------------------------------------------------
+     * Side buttons
+     * ------------------------------------------------------------- */
+    function center() {
+      var r = canvas.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    function setRightNext(on) {
+      rightNext = on; $('b-rmb').classList.toggle('on', on);
+      if (typeof updateBtnLabel === 'function') updateBtnLabel();
+    }
+    function bind(id, fn) {
+      var el = $(id);
+      el.addEventListener('click', function (e) { e.preventDefault(); fn(e); });
+    }
+    bind('b-zin', function () { var c = center(); wheel(c.x, c.y, -100); });
+    bind('b-zout', function () { var c = center(); wheel(c.x, c.y, 100); });
+    bind('b-rmb', function () { setRightNext(!rightNext); if (rightNext) toast(aim ? 'Next CLICK press is a right-click' : 'Next tap is a right-click'); });
+    /* See-through: trees, town buildings and industries in one tap. */
+    function showSeeThrough() {
+      if (Module._em_openttd_see_through_state) $('b-see').classList.toggle('on', Module._em_openttd_see_through_state() === 1);
+    }
+    bind('b-see', function () {
+      if (!Module._em_openttd_toggle_see_through) return;
+      var on = Module._em_openttd_toggle_see_through() === 1;
+      $('b-see').classList.toggle('on', on);
+      toast(on ? 'Trees and buildings see-through' : 'Trees and buildings solid', 1500);
+    });
+    bind('b-aim', function () { setAim(!aim); toast(aim ? 'Aim mode on: slide to move the cursor, press CLICK to click' : 'Aim mode off'); });
+    bind('m-tapjump', function () { setTapJump(!tapJump); });
+    bind('m-btnside', function () { setBtnSide(!btnRight); });
+    setTapJump(tapJump); setBtnSide(btnRight);
+    /* restore aim mode once the game is running */
+    var aimWait = setInterval(function () {
+      if (typeof FS !== 'undefined' && $('loader').style.display === 'none') { clearInterval(aimWait); setAim(aim); showSeeThrough(); }
+    }, 500);
+    var lastEsc = 0;
+    bind('b-esc', function () {
+      /* Esc cancels the current build tool; a quick second tap also closes the
+       * frontmost window (Delete key). */
+      var now = Date.now();
+      if (now - lastEsc < 600) key('Delete', 'Delete', 46);
+      else key('Escape', 'Escape', 27);
+      lastEsc = now;
+    });
+    /* ---------------------------------------------------------------
+     * In-app keyboard (used in every orientation for consistency).
+     * Keys are sent to the game exactly like a hardware keyboard:
+     * keydown + keypress (the typed character) + keyup.
+     * ------------------------------------------------------------- */
+    var LAYOUTS = {
+      abc: [['q','w','e','r','t','y','u','i','o','p'], ['a','s','d','f','g','h','j','k','l'],
+            ['{shift}','z','x','c','v','b','n','m','{bksp}'], ['{123}','{left}','{space}','{right}','{enter}','{hide}']],
+      num: [['1','2','3','4','5','6','7','8','9','0'], ['-','/',':',';','(',')','&','@','"'],
+            ['{shift2}','.',',','?','!',"'",'#','%','{bksp}'], ['{abc}','{left}','{space}','{right}','{enter}','{hide}']],
+      sym: [['[',']','{','}','#','%','^','*','+','='], ['_','\\','|','~','<','>','$','€','£'],
+            ['{123b}','.',',','?','!',"'",'·','•','{bksp}'], ['{abc}','{left}','{space}','{right}','{enter}','{hide}']]
+    };
+    var LABEL = { '{shift}': '⇧', '{bksp}': '⌫', '{123}': '123', '{abc}': 'ABC', '{space}': 'space', '{enter}': 'done',
+                  '{hide}': '⌄', '{shift2}': '#+=', '{123b}': '123', '{left}': '◀', '{right}': '▶' };
+    var vkb = $('vkb'), vkLayout = 'abc', vkShift = false, vkOpen = false;
+    function charKeyCode(ch) {
+      var u = ch.toUpperCase();
+      if (/^[A-Z0-9]$/.test(u)) return u.charCodeAt(0);
+      return { ' ': 32, '-': 189, '/': 191, '.': 190, ',': 188, ';': 186, "'": 222, '=': 187, '[': 219, ']': 221, '\\': 220 }[ch] || 0;
+    }
+    function sendChar(ch) {
+      var kc = charKeyCode(ch), code = /^[a-z]$/i.test(ch) ? 'Key' + ch.toUpperCase() : (/^[0-9]$/.test(ch) ? 'Digit' + ch : (ch === ' ' ? 'Space' : ''));
+      function ev(type, extra) {
+        var e = new KeyboardEvent(type, { bubbles: true, cancelable: true, key: ch, code: code, keyCode: extra.keyCode, which: extra.keyCode, charCode: extra.charCode, shiftKey: ch !== ch.toLowerCase() });
+        try {
+          Object.defineProperty(e, 'keyCode', { get: function () { return extra.keyCode; } });
+          Object.defineProperty(e, 'which', { get: function () { return extra.keyCode || extra.charCode; } });
+          Object.defineProperty(e, 'charCode', { get: function () { return extra.charCode; } });
+        } catch (x) {}
+        window.dispatchEvent(e);
+      }
+      ev('keydown', { keyCode: kc, charCode: 0 });
+      ev('keypress', { keyCode: ch.charCodeAt(0), charCode: ch.charCodeAt(0) });
+      ev('keyup', { keyCode: kc, charCode: 0 });
+    }
+    function vkPress(k) {
+      switch (k) {
+        case '{shift}': vkShift = !vkShift; drawKeyboard(); return;
+        case '{123}': case '{123b}': vkLayout = 'num'; drawKeyboard(); return;
+        case '{shift2}': vkLayout = 'sym'; drawKeyboard(); return;
+        case '{abc}': vkLayout = 'abc'; drawKeyboard(); return;
+        case '{hide}': setKeyboard(false); return;
+        case '{bksp}': key('Backspace', 'Backspace', 8); return;
+        case '{left}': key('ArrowLeft', 'ArrowLeft', 37); return;
+        case '{right}': key('ArrowRight', 'ArrowRight', 39); return;
+        case '{enter}': key('Enter', 'Enter', 13); return;
+        case '{space}': sendChar(' '); return;
+      }
+      sendChar(vkShift ? k.toUpperCase() : k);
+      if (vkShift) { vkShift = false; drawKeyboard(); }
+    }
+    function drawKeyboard() {
+      vkb.innerHTML = '';
+      LAYOUTS[vkLayout].forEach(function (row) {
+        var r = document.createElement('div'); r.className = 'row';
+        row.forEach(function (k) {
+          var b = document.createElement('div');
+          b.className = 'k' + (k === '{space}' ? ' space' : k === '{enter}' ? ' enter' : k.charAt(0) === '{' ? ' wide' : '') + (k === '{shift}' && vkShift ? ' on' : '');
+          b.textContent = LABEL[k] || (vkShift && vkLayout === 'abc' ? k.toUpperCase() : k);
+          b.dataset.k = k;
+          r.appendChild(b);
+        });
+        vkb.appendChild(r);
+      });
+    }
+    /* press on pointerdown for speed; Backspace and arrows repeat while held */
+    var vkRepeat = null;
+    function stopRepeat() { clearTimeout(vkRepeat); clearInterval(vkRepeat); vkRepeat = null; }
+    vkb.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+    vkb.addEventListener('pointerdown', function (e) {
+      var b = e.target.closest && e.target.closest('.k'); if (!b) return;
+      e.preventDefault();
+      b.classList.add('down'); setTimeout(function () { b.classList.remove('down'); }, 110);
+      var k = b.dataset.k;
+      vkPress(k);
+      if (k === '{bksp}' || k === '{left}' || k === '{right}') {
+        stopRepeat();
+        vkRepeat = setTimeout(function () { vkRepeat = setInterval(function () { vkPress(k); }, 70); }, 400);
+      }
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { vkb.addEventListener(t, stopRepeat); });
+    /* The game tells us when a text box is being edited and where it is
+     * (game pixels): open the keyboard by itself, and slide the game up if the
+     * box would otherwise be hidden behind the keyboard. */
+    var vkAuto = false, editRect = null;
+    function placeGame() {
+      var shift = 0;
+      if (vkOpen && editRect) {
+        var kbh = parseInt(getComputedStyle(app).getPropertyValue('--kbh'), 10) || 0;
+        var visible = stage.clientHeight - kbh;
+        if (editRect.b + 10 > visible) shift = Math.min(editRect.b + 10 - visible, kbh);
+      }
+      canvas.style.top = shift ? (-shift) + 'px' : '';
+      if (aim && cur) setTimeout(function () { moveCursor(cur.x, cur.y); }, 30);
+    }
+    window.openttd_editbox = function (editing, l, t, r, b) {
+      if (editing) {
+        editRect = { l: l, t: t, r: r, b: b };
+        if (!vkOpen) { setKeyboard(true); vkAuto = true; }
+        placeGame();
+      } else {
+        editRect = null;
+        if (vkOpen && vkAuto) setKeyboard(false); else placeGame();
+      }
+    };
+    function setKeyboard(on) {
+      vkOpen = on; vkAuto = false;
+      $('b-kbd').classList.toggle('on', on);
+      if (on) {
+        var h = Math.round(Math.min(stage.clientHeight * 0.42, 210));
+        app.style.setProperty('--kbh', h + 'px');
+        vkLayout = 'abc'; vkShift = false; drawKeyboard();
+      }
+      app.classList.toggle('kbd-open', on);
+      placeGame();
+    }
+    bind('b-kbd', function () { setKeyboard(!vkOpen); });
+
+    /* ---------------------------------------------------------------
+     * Menu: help, fullscreen, save import / export
+     * ------------------------------------------------------------- */
+    bind('b-menu', function () { $('sheet').classList.add('open'); });
+    bind('m-close', function () { $('sheet').classList.remove('open'); });
+    $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) $('sheet').classList.remove('open'); });
+    bind('m-flip', function () {
+      flip = !flip;
+      try { localStorage.setItem('ttd-flip', flip ? '1' : '0'); } catch (e) {}
+      relayout();
+      if (!rot) toast('Flip only applies when the phone is held sideways with rotation lock on', 4000);
+    });
+    if (rot) {
+      var seen = false;
+      try { seen = localStorage.getItem('ttd-rot-hint') === '1'; localStorage.setItem('ttd-rot-hint', '1'); } catch (e) {}
+      if (!seen) setTimeout(function () { toast('Hold your phone sideways. Upside down? Menu → Flip upside down', 6000); }, 1500);
+    }
+    bind('m-fs', function () {
+      var el = document.documentElement;
+      var req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) { req.call(el).catch && req.call(el).catch(function () {}); }
+      else toast('On iPhone use Share → Add to Home Screen for full screen', 4000);
+    });
+
+    function status(t) { $('status').textContent = t; }
+    function ensureDir(path) {
+      var parts = path.split('/').filter(Boolean), cur = '';
+      parts.forEach(function (p) { cur += '/' + p; try { FS.mkdir(cur); } catch (e) {} });
+    }
+    function sync(cb) { if (window.openttd_syncfs) window.openttd_syncfs(cb); else FS.syncfs(false, function () { cb && cb(); }); }
+    function fsReady() { return typeof FS !== 'undefined' && FS.analyzePath && FS.analyzePath(PERSONAL).exists; }
+
+    bind('m-export', function () {
+      if (!fsReady()) { status('Game is still loading.'); return; }
+      var files = [];
+      ['save', 'save/autosave', 'scenario'].forEach(function (d) {
+        var dir = PERSONAL + '/' + d;
+        try {
+          FS.readdir(dir).forEach(function (n) {
+            if (n === '.' || n === '..') return;
+            var p = dir + '/' + n;
+            if (FS.isFile(FS.stat(p).mode)) files.push({ path: p, name: n });
+          });
+        } catch (e) {}
+      });
+      if (!files.length) { status('No saved games yet.'); return; }
+      files.forEach(function (f, i) {
+        setTimeout(function () {
+          var blob = new Blob([FS.readFile(f.path)], { type: 'application/octet-stream' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob); a.download = f.name;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        }, i * 400);
+      });
+      status('Exporting ' + files.length + ' file(s) …');
+    });
+
+    var ORIG = /^(trg[1chit]r?\.grf|sample\.cat)$/i;
+    bind('m-import', function () { $('m-file').click(); });
+    $('m-file').addEventListener('change', function (e) {
+      if (!fsReady()) { status('Game is still loading — try again in a moment.'); return; }
+      var list = touchesArr(e.target.files);
+      var done = 0, placed = [], origCount = 0;
+      list.forEach(function (file) {
+        var r = new FileReader();
+        r.onload = function () {
+          var name = file.name, lower = name.toLowerCase(), dir;
+          if (ORIG.test(lower)) { dir = 'baseset'; name = lower; origCount++; }
+          else if (/\.(grf|obg|obs|obm|tar)$/.test(lower)) dir = 'content_download/newgrf';
+          else if (/\.(scn|sv0|ss0|sc1|ss1)$/.test(lower)) dir = 'scenario';
+          else if (/\.(heightmap|png)$/.test(lower)) dir = 'scenario/heightmap';
+          else dir = 'save'; // .sav, .sv1 (TTD), .sv2 (TTO) …
+          ensureDir(PERSONAL + '/' + dir);
+          FS.writeFile(PERSONAL + '/' + dir + '/' + name, new Uint8Array(r.result));
+          placed.push(name + ' → ' + dir);
+          if (++done === list.length) finish();
+        };
+        r.readAsArrayBuffer(file);
+      });
+      function finish() {
+        if (origCount) {
+          /* Original sets are found by their .obg description file, which
+           * must sit next to the data files. */
+          try {
+            FS.readdir('/baseset').forEach(function (n) {
+              if (/^orig_.*\.(obg|obs|grf)$/i.test(n)) {
+                FS.writeFile(PERSONAL + '/baseset/' + n, FS.readFile('/baseset/' + n));
+              }
+            });
+          } catch (x) { console.warn(x); }
+        }
+        sync(function () {
+          status('Imported: ' + placed.join(', ') + (origCount ? '. Reload, then pick “Original” in Game Options.' : '.'));
+        });
+        e.target.value = '';
+      }
+    });
+
+    /* Offline support */
+    var loadedAt = Date.now();
+    function reloadNow() {
+      if (fsReady()) sync(function () { location.reload(); }); else location.reload();
+    }
+    bind('m-update', function () { reloadNow(); });
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1')) {
+      navigator.serviceWorker.addEventListener('message', function (e) {
+        if (!e.data || e.data.type !== 'updated') return;
+        /* Just opened (still on the title screen, most likely)? Switch straight away.
+         * Otherwise don't interrupt the game: offer the update in the menu. */
+        if (Date.now() - loadedAt < 45000) { reloadNow(); return; }
+        $('m-update').style.display = '';
+        toast('Update ready: save your game, then Menu → Reload to update', 6000);
+      });
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+        reg.update().catch(function () {});
+        document.addEventListener('visibilitychange', function () {
+          if (!document.hidden) reg.update().catch(function () {});
+        });
+      }).catch(function () {});
+      if (window.caches) caches.keys().then(function (k) {
+        var v = k.filter(function (n) { return n.indexOf('openttd-') === 0; })[0];
+        if (v) $('m-version').textContent = 'Version ' + v.replace('openttd-', '');
+      }).catch(function () {});
+    }
+    /* Keep the screen on while playing, where supported. */
+    function wake() { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); }
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
+    wake();
+    /* Save the settings/game files to IndexedDB when the app is backgrounded. */
+    /* ---------------------------------------------------------------
+     * Always saved: save the game the moment the app goes to the background
+     * (Home Screen, app switcher, phone call...). Autosave also runs every
+     * minute as a backup.
+     * ------------------------------------------------------------- */
+    var lastQuick = 0;
+    function quickSave() {
+      if (!fsReady() || !Module._em_openttd_quicksave || Date.now() - lastQuick < 3000) return;
+      lastQuick = Date.now();
+      try { Module._em_openttd_quicksave(); } catch (e) { console.warn('quicksave', e); }
+      sync();
+    }
+    document.addEventListener('visibilitychange', function () { if (document.hidden) quickSave(); });
+    window.addEventListener('pagehide', quickSave);
+
+    /* Continue: newest save or autosave (the main menu asks us). */
+    function savesNewestFirst() {
+      var list = [];
+      ['save', 'save/autosave'].forEach(function (d) {
+        var dir = PERSONAL + '/' + d;
+        try {
+          FS.readdir(dir).forEach(function (n) {
+            if (!/\.sav$/i.test(n)) return;
+            var st = FS.stat(dir + '/' + n);
+            if (FS.isFile(st.mode)) list.push({ path: dir + '/' + n, t: +st.mtime });
+          });
+        } catch (e) {}
+      });
+      return list.sort(function (a, b) { return b.t - a.t; });
+    }
+    window.openttd_has_save = function () { return savesNewestFirst().length > 0 ? 1 : 0; };
+    window.openttd_continue = function () {
+      var s = savesNewestFirst()[0];
+      if (s) Module.cwrap('em_openttd_load_game', null, ['string'])(s.path);
+    };
+
+    /* Back: undo the last action (up to 5). */
+    window.openttd_undo_changed = function (n) { $('b-undo').disabled = !(n > 0); };
+    bind('b-undo', function () {
+      if (!Module._em_openttd_undo) return;
+      var left = Module._em_openttd_undo();
+      if (left < 0) toast('Nothing to undo');
+      else toast(left > 0 ? 'Undone (' + left + ' more step' + (left === 1 ? '' : 's') + ' available)' : 'Undone');
+    });
+  })();
+  </script>
+  <script async src="openttd.js"></script>
+</body>
+</html>

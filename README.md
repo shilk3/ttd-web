@@ -36,6 +36,9 @@ offline mode and "Add to Home Screen".
   latest one.
 - **Phone-friendly first-run settings**: drag-to-scroll, right-click tooltips, monthly autosave, no survey popup.
 - **Home-screen app**: web manifest + service worker, so it runs full-screen and offline once installed.
+  Updates download only files whose contents changed: `tools/write_sw.py` puts a fingerprint of every
+  file into `sw.js`, the worker reuses any stored copy with a matching fingerprint, and builds are
+  repeatable (fixed build date, page made outside the linker), so a page-only change is ~50 KB.
 - **Save import/export** and **original TTD files**: import `.sav`/`.sv1` saves, or your own
   original TTD `TRG*.GRF` + `SAMPLE.CAT` files to play with the original graphics and sounds.
   (They stay on your device; this repo does not include any original game files.)

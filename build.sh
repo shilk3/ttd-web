@@ -88,17 +88,28 @@ cd "$SRC/build"
 # --- The game ---------------------------------------------------------------
 emcmake cmake .. -G Ninja -DHOST_BINARY_DIR=../build-host -DCMAKE_BUILD_TYPE=Release \
   -DOPTION_USE_ASSERTS=OFF -DCMAKE_MODULE_PATH="$SRC/os/emscripten/cmake"
-# The page template is not a tracked dependency; force a relink so it is picked up.
-rm -f openttd.html
+# Repeatable builds: the game stamps its build date into itself; use the release's own
+# date instead of the clock, so a rebuild with no real change gives identical files
+# (and phones see no update).
+export SOURCE_DATE_EPOCH="$(git -C "$SRC" log -1 --format=%ct)"
 ninja -j"$JOBS"
 
 # --- Collect the site -------------------------------------------------------
 rm -rf "$OUT"; mkdir -p "$OUT"
-cp openttd.html "$OUT/index.html"
+# The page is made from web/shell.html here rather than by the linker, so a page-only
+# change does not relink the game (linking is not byte-for-byte repeatable, and an
+# unchanged game file means phones do not download it again).
+python3 - "$REPO/web/shell.html" "$OUT/index.html" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+page = open(src, encoding='utf-8').read()
+assert page.count('{{{ SCRIPT }}}') == 1
+open(dst, 'w', encoding='utf-8').write(page.replace('{{{ SCRIPT }}}', '<script async src="openttd.js"></script>'))
+PY
 cp openttd.js openttd.wasm openttd.data "$OUT/"
 cp "$REPO"/web/{manifest.webmanifest,icon-180.png,icon-192.png,icon-512.png} "$OUT/"
-BUILD_ID="$(date +%Y%m%d%H%M%S)"
-sed "s/BUILD_ID/$OPENTTD_VERSION-$BUILD_ID/" "$REPO/web/sw.js" > "$OUT/sw.js"
+# Offline worker with a content fingerprint per file, so updates download only what changed.
+python3 "$REPO/tools/write_sw.py" "$OUT" "$REPO/web/sw.js" "$OPENTTD_VERSION"
 touch "$OUT/.nojekyll"
 echo "Done. Site is in $OUT"
 ls -la "$OUT"
